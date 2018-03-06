@@ -7,6 +7,7 @@ FPS = 60
 size = 600, 450
 spn = 0, 0
 max_spn = 0, 0
+SPN_STEP = 0.001
 
 locate = "Красная площадь, 1"
 
@@ -21,7 +22,7 @@ def get_coord(location, sco='longlat'):
 
 def get_request(url, params=None, **kwargs):
     try:
-        res = requests.get(url, params, **kwargs)
+        res = requests.get(url, params=params, **kwargs)
         if not res:
             print(ERROR_STRING % (res.status_code, res.reason))
             sys.exit(res.status_code)
@@ -51,7 +52,30 @@ def map_image(long, lat, l=['sat', 'skl']):
     return convert_bytes(res.content)
 
 
-image = map_image(*get_coord(locate))
+def get_geo_object(long, lat):
+    url = 'https://geocode-maps.yandex.ru/1.x/'
+    
+    params = {
+        "geocode": str_param(long, lat),
+        "format": "json"
+    }
+    
+    res = get_request(url, params).json()
+    geo_object = res["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
+    return geo_object
+
+
+def sum_spn(spn, s1, s2=None):
+    if s2 is None:
+        s2 = s1
+    spn = list(spn)
+    spn[0] += s1
+    spn[1] += s2
+    return tuple(spn)
+
+
+coords = get_coord(locate)
+image = map_image(*coords)
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -59,11 +83,24 @@ surface = pygame.display.set_mode(size)
 surface.blit(image, (0, 0))
 
 running = True
+max_spn = search_spn(get_geo_object(*coords))
+print(max_spn)
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
             break
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_PAGEUP:
+                if sum_spn(spn, SPN_STEP) <= max_spn:
+                    spn = sum_spn(spn, SPN_STEP)
+            if event.key == pygame.K_PAGEDOWN:
+                if sum_spn(spn, -SPN_STEP) >= (0, 0):
+                    spn = sum_spn(spn, -SPN_STEP)                
+    
+    image = map_image(*coords)
+    
+    surface.blit(image, (0, 0))    
 
     pygame.display.flip()
     clock.tick(FPS)
