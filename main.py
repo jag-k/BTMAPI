@@ -1,36 +1,24 @@
-import requests
-from multitool import pygame, search_spn, convert_bytes
-import sys
+from multitool import *
 
-ERROR_STRING = '\x1b[31;1mError\x1b[1m (\x1b[36;1m%s\x1b[1m): \x1b[4;1m%s\x1b[0m'
 FPS = 60
 size = 600, 450
 spn = 0, 0
 max_spn = 0, 0
-SPN_STEP = 0.001
+SPN_STEP = 0.5
 
-locate = "Красная площадь, 1"
+# locate = "Красная площадь, 1"
+locate = "Россия"
 
 
 def get_coord(location, sco='longlat'):
-    url = "http://geocode-maps.yandex.ru/1.x/?geocode=%s&format=json&sco=%s" % (location, sco)
-    response = requests.get(url)
+    params = {
+        "geocode": location,
+        "sco": sco
+    }
+    response = get_request(GEOCODE, params)
     if response:
         res = response.json()['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']['Point']['pos']
         return tuple(map(float, res.split()))
-
-
-def get_request(url, params=None, **kwargs):
-    try:
-        res = requests.get(url, params=params, **kwargs)
-        if not res:
-            print(ERROR_STRING % (res.status_code, res.reason))
-            sys.exit(res.status_code)
-        else:
-            return res
-    except Exception as err:
-        print(ERROR_STRING % (type(err).__name__, err))
-        sys.exit(1)
 
 
 def str_param(*params):
@@ -38,8 +26,6 @@ def str_param(*params):
 
 
 def map_image(long, lat, l=['sat', 'skl']):
-    url = 'https://static-maps.yandex.ru/1.x/'
-
     params = {
         "ll": str_param(long, lat),
         "l": ','.join(l),
@@ -47,20 +33,17 @@ def map_image(long, lat, l=['sat', 'skl']):
         "spn": str_param(*spn)
     }
 
-    res = get_request(url, params)
+    res = get_request(STATIC, params)
 
     return convert_bytes(res.content)
 
 
 def get_geo_object(long, lat):
-    url = 'https://geocode-maps.yandex.ru/1.x/'
-    
     params = {
-        "geocode": str_param(long, lat),
-        "format": "json"
+        "geocode": str_param(long, lat)
     }
     
-    res = get_request(url, params).json()
+    res = get_request(GEOCODE, params).json()
     geo_object = res["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
     return geo_object
 
@@ -79,24 +62,33 @@ image = map_image(*coords)
 
 pygame.init()
 clock = pygame.time.Clock()
+pygame.display.set_icon(image)
+pygame.display.set_caption(locate, locate)
 surface = pygame.display.set_mode(size)
 surface.blit(image, (0, 0))
+pygame.display.flip()
+
 
 running = True
 max_spn = search_spn(get_geo_object(*coords))
 print(max_spn)
+spn = max_spn
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
             break
         if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_PAGEUP:
+            print(event)
+            if event.key == pygame.K_PAGEUP or event.key == pygame.K_KP9 and event.mod == 4096:
                 if sum_spn(spn, SPN_STEP) <= max_spn:
                     spn = sum_spn(spn, SPN_STEP)
-            if event.key == pygame.K_PAGEDOWN:
+                    print(spn)
+            if event.key == pygame.K_PAGEDOWN or event.key == pygame.K_KP3 and event.mod == 4096:
                 if sum_spn(spn, -SPN_STEP) >= (0, 0):
-                    spn = sum_spn(spn, -SPN_STEP)                
+                    spn = sum_spn(spn, -SPN_STEP)
+                    print(spn)
     
     image = map_image(*coords)
     
