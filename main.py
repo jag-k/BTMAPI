@@ -6,7 +6,14 @@ next_spn = None
 locate = "Красная площадь, 1"
 # locate = "Австралия"
 # locate = input("Enter locate: ")
-SPN_STEP = float(input("Enter the zoom-ratio: "))
+# SPN_STEP = float(input("Enter the zoom-ratio: "))
+SPN_STEP = 0.01
+l_mode = 'гибрид'
+L_DICT = {
+    "гибрид": ['sat', 'skl'],
+    "спутник": ['sat'],
+    "схема": ['map'],
+}
 
 
 def map_image(long, lat, l=['sat', 'skl']):
@@ -33,7 +40,7 @@ coords = get_coord(locate)
 # print(spn)
 spn = max_spn = search_spn(get_geo_object(*coords))
 # print(max_spn)
-image = map_image(*coords)
+image = map_image(*coords, L_DICT[l_mode])
 
 pygame.init()
 clock = pygame.time.Clock()

@@ -77,7 +77,7 @@ class Label:
 
 
 class TextBox(Label):
-    def __init__(self, rect, text, max_len=None, execute=(lambda self: self.set_focus())):
+    def __init__(self, rect, text, max_len=None, execute=(lambda self: self.set_focus()), placeholder=None):
         super().__init__(rect, text, bg_color='white')
         self.focus = False
         self.blink = True
@@ -85,6 +85,7 @@ class TextBox(Label):
         self.shift = 0
         self.max_len = max_len
         self.execute = execute
+        self.placeholder = placeholder
 
     def can_write(self, text=None):
         if text is None:
@@ -141,7 +142,9 @@ class TextBox(Label):
     def render(self, surface):
         super().render(surface)
         if self.focus and self.blink:
-            self.rendered_text = self.font.render(self.get_text[0], 1, self.font_color)
+            self.rendered_text = self.font.render(self.get_text[0] if self.text or self.placeholder is None
+                                                  else self.placeholder,
+                                                  1, self.font_color)
             self.rendered_rect = self.rendered_text.get_rect(x=self.Rect.x + 2, centery=self.Rect.centery)
 
             is_shift = (2 if not self.shift else 0)
@@ -151,7 +154,7 @@ class TextBox(Label):
 
 class Button(Label):
     def __init__(self, rect, text, text_color='gray', bg_color=pygame.Color('blue'),
-                 active_color=pygame.Color("lightblue"), active=True, click_event=lambda self: self):
+                 active_color=pygame.Color("lightblue"), active=True, click_event=(lambda self: self)):
         super().__init__(rect, text, text_color, bg_color)
         self.active_color = active_color
         self.color = self.bg_color
