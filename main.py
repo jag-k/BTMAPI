@@ -1,51 +1,23 @@
+from GUI import GUI, Button, TextBox
 from multitool import *
 
 FPS = 60
-size = 600, 450
-spn = 0, 0
-max_spn = 0, 0
-SPN_STEP = 0.5
-
-# locate = "Красная площадь, 1"
-locate = "Россия"
-
-
-def get_coord(location, sco='longlat'):
-    params = {
-        "geocode": location,
-        "sco": sco
-    }
-    response = get_request(GEOCODE, params)
-    if response:
-        res = response.json()['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']['Point']['pos']
-        return tuple(map(float, res.split()))
-
-
-def str_param(*params):
-    return ','.join(map(str, params))
+next_spn = None
+locate = "Красная площадь, 1"
+# locate = "Австралия"
+# locate = input("Enter locate: ")
+SPN_STEP = float(input("Enter the zoom-ratio: "))
 
 
 def map_image(long, lat, l=['sat', 'skl']):
     params = {
         "ll": str_param(long, lat),
         "l": ','.join(l),
-        "size": str_param(*size),
+        "size": str_param(*SIZE),
         "spn": str_param(*spn)
     }
 
-    res = get_request(STATIC, params)
-
-    return convert_bytes(res.content)
-
-
-def get_geo_object(long, lat):
-    params = {
-        "geocode": str_param(long, lat)
-    }
-    
-    res = get_request(GEOCODE, params).json()
-    geo_object = res["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
-    return geo_object
+    return convert_bytes(get_request(STATIC, params).content)
 
 
 def sum_spn(spn, s1, s2=None):
@@ -58,21 +30,22 @@ def sum_spn(spn, s1, s2=None):
 
 
 coords = get_coord(locate)
+# print(spn)
+spn = max_spn = search_spn(get_geo_object(*coords))
+# print(max_spn)
 image = map_image(*coords)
 
 pygame.init()
 clock = pygame.time.Clock()
 pygame.display.set_icon(image)
 pygame.display.set_caption(locate, locate)
-surface = pygame.display.set_mode(size)
-surface.blit(image, (0, 0))
+screen = pygame.display.set_mode(SIZE)
+screen.blit(image, (0, 0))
 pygame.display.flip()
 
 
+gui = GUI()
 running = True
-max_spn = search_spn(get_geo_object(*coords))
-print(max_spn)
-spn = max_spn
 
 while running:
     for event in pygame.event.get():
@@ -80,20 +53,25 @@ while running:
             running = False
             break
         if event.type == pygame.KEYDOWN:
-            print(event)
-            if event.key == pygame.K_PAGEUP or event.key == pygame.K_KP9 and event.mod == 4096:
-                if sum_spn(spn, SPN_STEP) <= max_spn:
-                    spn = sum_spn(spn, SPN_STEP)
-                    print(spn)
-            if event.key == pygame.K_PAGEDOWN or event.key == pygame.K_KP3 and event.mod == 4096:
-                if sum_spn(spn, -SPN_STEP) >= (0, 0):
-                    spn = sum_spn(spn, -SPN_STEP)
-                    print(spn)
-    
-    image = map_image(*coords)
-    
-    surface.blit(image, (0, 0))    
+            if event.key == pygame.K_PAGEUP or (event.key == pygame.K_KP9 and event.mod == 4096):
+                new_spn = sum_spn(spn, SPN_STEP)
+                if new_spn[0] <= max_spn[0] and new_spn[1] <= max_spn[0]:
+                    next_spn = new_spn
 
+            if event.key == pygame.K_PAGEDOWN or (event.key == pygame.K_KP3 and event.mod == 4096):
+                new_spn = sum_spn(spn, -SPN_STEP)
+                if new_spn[0] >= 0 and new_spn[1] >= 0:
+                    next_spn = new_spn
+                # print(next_spn)
+        gui.get_event(event)
+
+    if next_spn != spn and next_spn is not None:
+        spn = next_spn
+        image = map_image(*coords)
+        screen.blit(image, (0, 0))
+
+    gui.update()
+    gui.render(screen)
     pygame.display.flip()
     clock.tick(FPS)
 

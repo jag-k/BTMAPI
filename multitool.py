@@ -1,18 +1,33 @@
+from pprint import pprint
 import requests
 import sys
 import pygame
 from PIL import Image
 from io import BytesIO
+from hashlib import md5 as _md
 
+
+def no_color(string):
+    res = ''
+    fill = True
+    for i in string:
+        if fill and i == '\x1b':
+            fill = False
+            continue
+        if not fill and i == 'm':
+            fill = True
+            continue
+        res += i
+    return res
+
+
+ERROR_STRING = '\x1b[31;1mError\x1b[0m \x1b[1m(\x1b[36;1m%s\x1b[1m): \x1b[4;1m%s\x1b[0m'
 if 'win' in sys.platform:
     try:
         import colorama
         colorama.init()
-        ERROR_STRING = '\x1b[31;1mError\x1b[0;1m (\x1b[36;1m%s\x1b[1m): \x1b[4;1m%s\x1b[0m'
     except ImportError:
-        ERROR_STRING = 'Error (%s): %s'
-else:
-    ERROR_STRING = '\x1b[31;1mError\x1b[0;1m (\x1b[36;1m%s\x1b[1m): \x1b[4;1m%s\x1b[0m'
+        ERROR_STRING = no_color(ERROR_STRING)
 
 
 URLS = {
@@ -25,9 +40,27 @@ GEOCODE = 'geocode'
 STATIC = 'static'
 SEARCH = 'search'
 API_KEY = open('api_key').read()
+SIZE = 600, 450
+
+
+def md5(string):
+    return str(_md(str(string).encode('utf-8')).hexdigest())
+
+
+def get_coord(location, sco='longlat'):
+    params = {
+        "geocode": location,
+        "sco": sco
+    }
+    response = get_request(GEOCODE, params)
+    if response:
+        res = response.json()['response']['GeoObjectCollection']['featureMember'][0]['GeoObject']['Point']['pos']
+        return tuple(map(float, res.split()))
 
 
 def search_spn(geo_object):
+    if type(geo_object) is not dict:
+        geo_object = get_geo_object(*geo_object)
     data = geo_object["boundedBy"]["Envelope"]
     upper = tuple(map(float, data["upperCorner"].split()))
     lower = tuple(map(float, data["lowerCorner"].split()))
@@ -63,4 +96,46 @@ def get_request(url, params=None, **kwargs):
             return res
     except Exception as err:
         print(ERROR_STRING % (type(err).__name__, err))
+        raise err
         sys.exit(1)
+
+
+def get_geo_object(long, lat):
+    params = {
+        "geocode": str_param(long, lat)
+    }
+
+    res = get_request(GEOCODE, params).json()
+    geo_object = res["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
+    return geo_object
+
+
+def str_param(*params):
+    return ','.join(map(str, params))
+
+
+def get_image_hash(image):
+    return md5(image.get_view().raw)
+
+
+def get_z(long, lat, l=['sat', 'skl']):
+    params = {
+        "ll": str_param(long, lat),
+        "l": str_param(*l),
+        "spn": str_param(*search_spn([long, lat])),
+        "size": str_param(*SIZE)
+    }
+    image = convert_bytes(get_request(STATIC, params).content)
+    hash = get_image_hash(image)
+    del params['spn']
+    for i in range(18):
+        params['z'] = i
+        im = convert_bytes(get_request(STATIC, params).content)
+        h = get_image_hash(im)
+        if h == hash:
+            return i
+
+
+if __name__ == '__main__':
+    print('start')
+    print(get_z(*get_coord("Россия")))
