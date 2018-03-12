@@ -206,6 +206,7 @@ class Button(Label):
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self.button_up = self.pressed
             self.pressed = False
+            return True
         if event.type == pygame.MOUSEMOTION and self.active:
             self.color = self.active_color if self.Rect.collidepoint(*event.pos) else self.bg_color
 

@@ -7,8 +7,8 @@ locate = "Красная площадь, 1"
 # locate = "Австралия"
 # locate = input("Enter locate: ")
 # SPN_STEP = float(input("Enter the zoom-ratio: "))
-SPN_STEP = 0.01
-l_mode = 'гибрид'
+SPN_STEP = 0.003
+l_mode = 'схема'
 L_DICT = {
     "гибрид": ['sat', 'skl'],
     "спутник": ['sat'],
@@ -23,6 +23,7 @@ def map_image(long, lat, l=['sat', 'skl']):
         "size": str_param(*SIZE),
         "spn": str_param(*spn)
     }
+    print(params)
 
     return convert_bytes(get_request(STATIC, params).content)
 
@@ -34,13 +35,26 @@ def sum_spn(spn, s1, s2=None):
     spn[0] += s1
     spn[1] += s2
     return tuple(spn)
-
+    
+def view_maps(num):
+    # отрисовка карты
+    if num < 3:
+        image = map_image(*coords, L_DICT[maps[num]])
+    else:
+        num %= 3
+        image = map_image(*coords, L_DICT[maps[num % 3]])
+    screen.blit(image, (0, 0))  
+    return num
 
 coords = get_coord(locate)
 # print(spn)
 spn = max_spn = search_spn(get_geo_object(*coords))
 # print(max_spn)
-image = map_image(*coords, L_DICT[l_mode])
+# вид карт
+maps = ["схема", "спутник", "гибрид"]
+n_maps = 0
+# отрисовка карты по значению n_maps
+image = map_image(*coords, L_DICT[maps[n_maps]])
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -50,10 +64,9 @@ screen = pygame.display.set_mode(SIZE)
 screen.blit(image, (0, 0))
 pygame.display.flip()
 
-
 gui = GUI()
 running = True
-
+g = Button((0, 0, 100, 30), maps[n_maps])
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -70,15 +83,21 @@ while running:
                 if new_spn[0] >= 0 and new_spn[1] >= 0:
                     next_spn = new_spn
                 # print(next_spn)
-        gui.get_event(event)
+
+        if g.get_event(event):
+            # количество нажатий
+            n_maps += 1
+            n_maps = view_maps(n_maps)
+            # отрисовка новой кнопки
+            g = Button((0, 0, 100, 30), maps[n_maps])
+        
 
     if next_spn != spn and next_spn is not None:
         spn = next_spn
-        image = map_image(*coords)
+        image = map_image(*coords, L_DICT[maps[n_maps]])
         screen.blit(image, (0, 0))
 
-    gui.update()
-    gui.render(screen)
+    g.render(screen)
     pygame.display.flip()
     clock.tick(FPS)
 
