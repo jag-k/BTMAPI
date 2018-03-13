@@ -10,9 +10,9 @@ locate = "Красная площадь, 1"
 SPN_STEP = 0.003
 l_mode = 'схема'
 L_DICT = {
-    "гибрид": ['sat', 'skl'],
-    "спутник": ['sat'],
-    "схема": ['map'],
+    "Гибрид": ['sat', 'skl'],
+    "Спутник": ['sat'],
+    "Схема": ['map'],
 }
 
 
@@ -23,7 +23,6 @@ def map_image(long, lat, l=['sat', 'skl']):
         "size": str_param(*SIZE),
         "spn": str_param(*spn)
     }
-    print(params)
 
     return convert_bytes(get_request(STATIC, params).content)
 
@@ -40,22 +39,24 @@ def sum_spn(spn, s1, s2=None):
 def view_maps(num):
     # отрисовка карты
     if num < 3:
-        image = map_image(*coords, L_DICT[maps[num]])
+        image = map_image(coords[0], coords[1], L_DICT[maps[num]])
     else:
         num %= 3
-        image = map_image(*coords, L_DICT[maps[num % 3]])
+        image = map_image(coords[0], coords[1], L_DICT[maps[num % 3]])
     screen.blit(image, (0, 0))
     return num
 
+
 coords = get_coord(locate)
 # print(spn)
-spn = max_spn = search_spn(get_geo_object(*coords))
+spn = max_spn = search_spn(get_geo_object(coords[0], coords[1]))
 # print(max_spn)
 # вид карт
-maps = ["схема", "спутник", "гибрид"]
-n_maps = 0
+maps = ["Схема", "Спутник", "Гибрид"]
+START_TYPE = 0
+new_locate = False
 # отрисовка карты по значению n_maps
-image = map_image(*coords, L_DICT[maps[n_maps]])
+image = map_image(coords[0], coords[1], L_DICT[maps[START_TYPE]])
 
 pygame.init()
 clock = pygame.time.Clock()
@@ -67,15 +68,39 @@ pygame.display.flip()
 
 gui = GUI()
 
+
 # GUI ELEMENTS
+
+def type_button_click(button: Button):
+    button.text = maps[(maps.index(button.text) + 1) % 3]
+
+
+def search_textbox_event(textbox: TextBox):
+    global locate
+    global coords
+    global new_locate
+    locate = textbox.text
+    coords = get_coord(locate)
+    new_locate = True
+
+
 bg_color = to_color((240, 189, 0))
 active_color = to_color((255, 204, 0))
 
-search_button = Button((10, 50, 100, 40), 'Поиск', 'black', bg_color, active_color)
+search_textbox = TextBox((5, 5, 250, 35), locate, execute=search_textbox_event, placeholder="Поиск…",
+                         bg_color=(255, 255, 255, 150))
+search_button = Button((5, 50, 100, 35), 'Поиск', 'black', bg_color, active_color,
+                       click_event=lambda x: search_textbox_event(search_textbox))
 
-g = Button((100, 0, 100, 30), maps[n_maps])
+type_button_rect = pygame.Rect(0, 0, 100, 35)
+type_button_rect.bottomright = (SIZE[0]-5, SIZE[1]-5)
 
-gui = GUI(search_button, type_button)
+type_button = Button(type_button_rect, maps[START_TYPE], 'black', bg_color, active_color,
+                     click_event=type_button_click)
+old_type = maps[START_TYPE]
+
+
+gui = GUI(search_button, type_button, search_textbox)
 running = True
 while running:
     for event in pygame.event.get():
@@ -94,17 +119,17 @@ while running:
                     next_spn = new_spn
                 # print(next_spn)
 
-        if g.get_event(event):
-            # количество нажатий
-            n_maps += 1
-            n_maps = view_maps(n_maps)
-            # отрисовка новой кнопки
-            g = Button((0, 0, 100, 30), maps[n_maps])
+        gui.get_event(event)
 
+    if next_spn != spn and next_spn is not None or old_type != type_button.text or new_locate:
+        spn = next_spn if next_spn is not None else spn
+        image = map_image(coords[0], coords[1], L_DICT[type_button.text])
+        old_type = type_button.text
+        new_locate = False
 
-    if next_spn != spn and next_spn is not None:
-        spn = next_spn
-        image = map_image(*coords, L_DICT[maps[n_maps]])
+        pygame.display.set_icon(image)
+        pygame.display.set_caption(locate, locate)
+
         screen.blit(image, (0, 0))
 
     gui.update()

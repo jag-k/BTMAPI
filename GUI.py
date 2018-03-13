@@ -26,7 +26,7 @@ class GUI:
         self.element += element
         return self
 
-    def render(self, surface):
+    def render(self, surface, text=None):
         for i in self.element:
             render = getattr(i, "render", None)
             if callable(render):
@@ -69,17 +69,19 @@ class Label:
         self.Rect = pygame.Rect(rect)
         self.text = text
         self.text_pos = text_position
-        self.font_color = pygame.Color(text_color)
-        self.bg_color = None if bg_color == -1 else \
-            (bg_color if type(bg_color) is pygame.Color else pygame.Color(bg_color))
+        self.font_color = to_color(text_color)
+        self.bg_color = None if bg_color == -1 else to_color(bg_color)
         self.font = pygame.font.Font(None, self.Rect.height - 4)
         self.rendered_text = None
         self.rendered_rect = None
 
-    def render(self, surface: pygame.Surface):
+    def render(self, surface, text=None):
+        # surface = surface.convert_alpha(surface)
+        if text is None:
+            text = self.text
         if self.bg_color is not None:
             surface.fill(self.bg_color, self.Rect)
-        self.rendered_text = self.font.render(self.text, 1, self.font_color)
+        self.rendered_text = self.font.render(text, 1, self.font_color)
         self.rendered_rect = self.rendered_text.get_rect(x=self.Rect.x + 2, centery=self.Rect.centery)
         if self.text_pos == 'center':
             self.rendered_rect.centerx = self.Rect.centerx
@@ -87,8 +89,9 @@ class Label:
 
 
 class TextBox(Label):
-    def __init__(self, rect, text, max_len=None, execute=(lambda self: self.set_focus()), placeholder=None):
-        super().__init__(rect, text, bg_color='white')
+    def __init__(self, rect, text, max_len=None, execute=(lambda self: self.set_focus()), placeholder=None,
+                 bg_color='white', text_color='gray'):
+        super().__init__(rect, text, text_color=text_color, bg_color=bg_color)
         self.focus = False
         self.blink = True
         self.blink_timer = 0
@@ -96,6 +99,7 @@ class TextBox(Label):
         self.max_len = max_len
         self.execute = execute
         self.placeholder = placeholder
+
 
     def can_write(self, text=None):
         if text is None:
@@ -149,12 +153,10 @@ class TextBox(Label):
             self.blink = not self.blink
             self.blink_timer = pygame.time.get_ticks()
 
-    def render(self, surface):
-        super().render(surface)
+    def render(self, surface, text=None):
+        super().render(surface, text=self.text if self.text or self.placeholder is None else self.placeholder)
         if self.focus and self.blink:
-            self.rendered_text = self.font.render(self.get_text[0] if self.text or self.placeholder is None
-                                                  else self.placeholder,
-                                                  1, self.font_color)
+            self.rendered_text = self.font.render(self.get_text[0], 1, self.font_color)
             self.rendered_rect = self.rendered_text.get_rect(x=self.Rect.x + 2, centery=self.Rect.centery)
 
             is_shift = (2 if not self.shift else 0)
@@ -166,7 +168,7 @@ class Button(Label):
     def __init__(self, rect, text, text_color='gray', bg_color=pygame.Color('blue'),
                  active_color=pygame.Color("lightblue"), active=True, click_event=(lambda self: self)):
         super().__init__(rect, text, text_color, bg_color)
-        self.active_color = active_color
+        self.active_color = to_color(active_color)
         self.color = self.bg_color
         self.pressed = False
         self.active = active
@@ -179,7 +181,7 @@ class Button(Label):
             return True
         return False
 
-    def render(self, surface):
+    def render(self, surface, text=None):
         surface.fill(self.color, self.Rect)
         text = ''
         for t in self.text:
@@ -232,7 +234,7 @@ class Checkbox:
         self.rendered_rect = None
         self.pressed = False
 
-    def render(self, surface):
+    def render(self, surface, text=None):
         r = self.Rect
         self.rendered_text = self.font.render(self.text, 1, self.font_color)
         self.rendered_rect = self.rendered_text.get_rect(x=r.x + r.width + 5, centery=r.centery)
