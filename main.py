@@ -1,4 +1,4 @@
-from GUI import GUI, Button, TextBox
+from GUI import GUI, Button, TextBox, to_color
 from multitool import *
 
 FPS = 60
@@ -35,7 +35,8 @@ def sum_spn(spn, s1, s2=None):
     spn[0] += s1
     spn[1] += s2
     return tuple(spn)
-    
+
+
 def view_maps(num):
     # отрисовка карты
     if num < 3:
@@ -43,7 +44,7 @@ def view_maps(num):
     else:
         num %= 3
         image = map_image(*coords, L_DICT[maps[num % 3]])
-    screen.blit(image, (0, 0))  
+    screen.blit(image, (0, 0))
     return num
 
 coords = get_coord(locate)
@@ -65,8 +66,17 @@ screen.blit(image, (0, 0))
 pygame.display.flip()
 
 gui = GUI()
+
+# GUI ELEMENTS
+bg_color = to_color((240, 189, 0))
+active_color = to_color((255, 204, 0))
+
+search_button = Button((10, 50, 100, 40), 'Поиск', 'black', bg_color, active_color)
+
+g = Button((100, 0, 100, 30), maps[n_maps])
+
+gui = GUI(search_button, type_button)
 running = True
-g = Button((0, 0, 100, 30), maps[n_maps])
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -90,14 +100,15 @@ while running:
             n_maps = view_maps(n_maps)
             # отрисовка новой кнопки
             g = Button((0, 0, 100, 30), maps[n_maps])
-        
+
 
     if next_spn != spn and next_spn is not None:
         spn = next_spn
         image = map_image(*coords, L_DICT[maps[n_maps]])
         screen.blit(image, (0, 0))
 
-    g.render(screen)
+    gui.update()
+    gui.render(screen)
     pygame.display.flip()
     clock.tick(FPS)
 

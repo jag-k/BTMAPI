@@ -2,6 +2,16 @@ import pygame
 pygame.init()
 
 
+def to_color(color):
+    if color is None:
+        return None
+    if type(color) is pygame.Color:
+        return color
+    if type(color) is tuple:
+        return pygame.Color(*color)
+    return pygame.Color(color)
+
+
 class GUI:
     def __init__(self, *elemets):
         self.element = elemets
