@@ -136,6 +136,14 @@ def get_z(long, lat, l=['sat', 'skl']):
             return i
 
 
+def create_point(long, lat, style='pm2', color='wt', size='m', content=''):
+    """
+    https://tech.yandex.ru/maps/doc/staticapi/1.x/dg/concepts/markers-docpage/
+    :return: point data
+    """
+    return str_param(long, lat, ''.join((style, color, size, content)))
+
+
 if __name__ == '__main__':
     print('start')
     print(get_z(*get_coord("Россия")))

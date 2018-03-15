@@ -9,6 +9,7 @@ locate = "Красная площадь, 1"
 # SPN_STEP = float(input("Enter the zoom-ratio: "))
 SPN_STEP = 0.003
 l_mode = 'схема'
+points = []
 L_DICT = {
     "Гибрид": ['sat', 'skl'],
     "Спутник": ['sat'],
@@ -21,12 +22,14 @@ KEY_CONTROL = {
     "left": [-SPN_STEP, 0],
 }
 
+
 def map_image(long, lat, l=['sat', 'skl']):
     params = {
         "ll": str_param(long, lat),
         "l": ','.join(l),
         "size": str_param(*SIZE),
-        "spn": str_param(*spn)
+        "spn": str_param(*spn),
+        "pt": '~'.join([points[i] + (str(i + 1) if i < 99 else '') for i in range(len(points))])
     }
 
     return convert_bytes(get_request(STATIC, params).content)
@@ -39,17 +42,6 @@ def sum_spn(spn, s1, s2=None):
     spn[0] += s1
     spn[1] += s2
     return tuple(spn)
-
-
-def view_maps(num):
-    # отрисовка карты
-    if num < 3:
-        image = map_image(coords[0], coords[1], L_DICT[maps[num]])
-    else:
-        num %= 3
-        image = map_image(coords[0], coords[1], L_DICT[maps[num % 3]])
-    screen.blit(image, (0, 0))
-    return num
 
 
 coords = get_coord(locate)
@@ -75,16 +67,17 @@ gui = GUI()
 
 # GUI ELEMENTS
 
-def type_button_click(button: Button):
+def type_button_click(button):
     button.text = maps[(maps.index(button.text) + 1) % 3]
 
 
-def search_textbox_event(textbox: TextBox):
+def search_textbox_event(textbox):
     global locate
     global coords
     global new_locate
     locate = textbox.text
     coords = get_coord(locate)
+    points.append(create_point(*coords))
     new_locate = True
 
 

@@ -114,6 +114,7 @@ class TextBox(Label):
         if event.type == pygame.KEYDOWN and self.focus:
             if event.key == pygame.K_ESCAPE:
                 self.focus = False
+                return None
             text = self.get_text
             if event.key in (pygame.K_KP_ENTER, pygame.K_RETURN, 27):
                 self.execute(self)
