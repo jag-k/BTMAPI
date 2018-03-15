@@ -14,7 +14,12 @@ L_DICT = {
     "Спутник": ['sat'],
     "Схема": ['map'],
 }
-
+KEY_CONTROL = {
+    "up": [0, SPN_STEP],
+    "down": [0, -SPN_STEP],
+    "right": [SPN_STEP, 0],
+    "left": [-SPN_STEP, 0],
+}
 
 def map_image(long, lat, l=['sat', 'skl']):
     params = {
@@ -55,7 +60,6 @@ spn = max_spn = search_spn(get_geo_object(coords[0], coords[1]))
 maps = ["Схема", "Спутник", "Гибрид"]
 START_TYPE = 0
 new_locate = False
-# отрисовка карты по значению n_maps
 image = map_image(coords[0], coords[1], L_DICT[maps[START_TYPE]])
 
 pygame.init()
@@ -117,7 +121,9 @@ while running:
                 new_spn = sum_spn(spn, -SPN_STEP)
                 if new_spn[0] >= 0 and new_spn[1] >= 0:
                     next_spn = new_spn
-                # print(next_spn)
+            if pygame.key.name(event.key) in KEY_CONTROL and not search_textbox.focus:
+                coords = sum_spn(coords, *KEY_CONTROL[pygame.key.name(event.key)])
+                new_locate = True
 
         gui.get_event(event)
 

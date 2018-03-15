@@ -100,7 +100,6 @@ class TextBox(Label):
         self.execute = execute
         self.placeholder = placeholder
 
-
     def can_write(self, text=None):
         if text is None:
             text = self.text
@@ -113,6 +112,8 @@ class TextBox(Label):
 
     def get_event(self, event):
         if event.type == pygame.KEYDOWN and self.focus:
+            if event.key == pygame.K_ESCAPE:
+                self.focus = False
             text = self.get_text
             if event.key in (pygame.K_KP_ENTER, pygame.K_RETURN, 27):
                 self.execute(self)
