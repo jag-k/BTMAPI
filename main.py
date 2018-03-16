@@ -1,4 +1,4 @@
-from GUI import GUI, Button, TextBox, to_color
+from GUI import *
 from multitool import *
 
 FPS = 60
@@ -78,7 +78,16 @@ def search_textbox_event(textbox):
     locate = textbox.text
     coords = get_coord(locate)
     points.append(create_point(*coords))
+    if delete_last_button not in gui.element:
+        gui.add_element(delete_last_button)
     new_locate = True
+
+
+def delete_last_event(button):
+    if points:
+        del points[-1]
+        global new_locate
+        new_locate = True
 
 
 bg_color = to_color((240, 189, 0))
@@ -89,6 +98,7 @@ search_textbox = TextBox((5, 5, 250, 35), locate, execute=search_textbox_event, 
 search_button = Button((5, 50, 100, 35), 'Поиск', 'black', bg_color, active_color,
                        click_event=lambda x: search_textbox_event(search_textbox))
 
+
 type_button_rect = pygame.Rect(0, 0, 100, 35)
 type_button_rect.bottomright = (SIZE[0]-5, SIZE[1]-5)
 
@@ -96,8 +106,14 @@ type_button = Button(type_button_rect, maps[START_TYPE], 'black', bg_color, acti
                      click_event=type_button_click)
 old_type = maps[START_TYPE]
 
+delete_last_rect = pygame.Rect(0, 0, 200, 35)
+delete_last_rect.bottomleft = (5, SIZE[1]-5)
 
-gui = GUI(search_button, type_button, search_textbox)
+delete_last_button = Button(delete_last_rect, "Сброс поискового результата", 'black', bg_color, active_color,
+                            click_event=delete_last_event)
+
+
+gui = GUI(search_button, type_button, search_textbox, delete_last_button)
 running = True
 while running:
     for event in pygame.event.get():
@@ -130,6 +146,9 @@ while running:
         pygame.display.set_caption(locate, locate)
 
         screen.blit(image, (0, 0))
+
+    if not points:
+        gui.delete(delete_last_button)
 
     gui.update()
     gui.render(screen)
