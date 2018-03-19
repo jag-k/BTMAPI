@@ -39,7 +39,7 @@ URLS = {
 GEOCODE = 'geocode'
 STATIC = 'static'
 SEARCH = 'search'
-API_KEY = open('api_key').read()
+API_KEY = open('api_key', 'r').read()
 SIZE = 600, 450
 
 
@@ -77,26 +77,26 @@ def get_request(url, params=None, **kwargs):
         if url in URLS:
             if url == SEARCH:
                 if params is None:
-                    url += "&apikey=" + API_KEY
+                    url += "&apikey=" + API_KEY + "&lang=ru_RU"
                 else:
                     params['apikey'] = API_KEY
+                    params['lang'] = 'ru_RU'
 
             if url == GEOCODE:
                 if params is None:
-                    url += "&format=json" + API_KEY
+                    url += "&format=json"
                 else:
                     params['format'] = 'json'
 
             url = URLS[url]
         res = requests.get(url, params=params, **kwargs)
         if not res:
-            print(ERROR_STRING % (res.status_code, res.reason))
+            print(ERROR_STRING % (res.status_code, res.reason), "\n\nURL:", res.url)
             sys.exit(res.status_code)
         else:
             return res
     except Exception as err:
         print(ERROR_STRING % (type(err).__name__, err))
-        raise err
         sys.exit(1)
 
 
@@ -142,8 +142,3 @@ def create_point(long, lat, style='pm2', color='wt', size='m', content=''):
     :return: point data
     """
     return str_param(long, lat, ''.join((style, color, size, content)))
-
-
-if __name__ == '__main__':
-    print('start')
-    print(get_z(*get_coord("Россия")))

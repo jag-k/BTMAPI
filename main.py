@@ -62,7 +62,9 @@ screen = pygame.display.set_mode(SIZE)
 screen.blit(image, (0, 0))
 pygame.display.flip()
 
+throbber = GIFImage('Throbber-small.gif')
 gui = GUI()
+throbber_coords = (SIZE[0] / 2 - throbber.get_width() / 2, SIZE[1] / 2 - throbber.get_height() / 2)
 
 
 # GUI ELEMENTS
@@ -138,6 +140,8 @@ while running:
 
     if next_spn != spn and next_spn is not None or old_type != type_button.text or new_locate:
         spn = next_spn if next_spn is not None else spn
+        throbber.render(screen, throbber_coords)
+        pygame.display.flip()
         image = map_image(coords[0], coords[1], L_DICT[type_button.text])
         old_type = type_button.text
         new_locate = False
@@ -152,6 +156,7 @@ while running:
 
     gui.update()
     gui.render(screen)
+
     pygame.display.flip()
     clock.tick(FPS)
 
