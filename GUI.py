@@ -17,6 +17,25 @@ def to_color(color):
     return pygame.Color(color)
 
 
+def split_line(text, width, font):
+
+    def if_in_rect(t):
+        return font.render(t, 1, to_color('black')).get_rect().width <= width
+
+    w = font.render(text, 1, to_color('black')).get_rect().width
+    try:
+        if w > width:
+            new = ''
+            index = 0
+            while if_in_rect(' '.join(text.split()[:index+1])):
+                new = ' '.join(text.split()[:index+1])
+                index += 1
+            return [new] + split_line(' '.join(text.split()[index:]), width, font)
+        return [' '.join(text.split())]
+    except RecursionError:
+        raise BaseException("This text (%s) does not fit in the field! Please increase the width!" % text)
+
+
 class GUI:
     def __init__(self, *elemets):
         self.element = list(elemets)
@@ -73,17 +92,47 @@ class GUI:
             del self.element[self.element.index(item)]
 
 
+class OldLabel:
+    def __init__(self, rect, text, text_color='gray', bg_color=-1, text_position='left'):
+        self.Rect = pygame.Rect(rect)
+        self.text = text
+        self.text_pos = text_position
+        self.font_color = to_color(text_color)
+        self.bg_color = None if bg_color == -1 else to_color(bg_color)
+        self.font = pygame.font.Font(None, self.Rect.height - 4)
+        self.rendered_text = None
+        self.rendered_rect = None
+
+    def render(self, surface, text=None):
+        if text is None:
+            text = self.text
+        if self.bg_color is not None:
+            screen = pygame.Surface(self.Rect.size, pygame.SRCALPHA)
+            screen.fill(self.bg_color)
+            surface.blit(screen, self.Rect)
+
+        self.rendered_text = self.font.render(text, 1, self.font_color)
+        self.rendered_rect = self.rendered_text.get_rect(x=self.Rect.x + 2, centery=self.Rect.centery)
+
+        if self.text_pos == 'center':
+            self.rendered_rect.centerx = self.Rect.centerx
+        elif self.text_pos == 'right':
+            self.rendered_rect.right = self.Rect.right
+
+        surface.blit(self.rendered_text, self.rendered_rect)
+
+
 class Label:
     def __init__(self, rect, text, text_color='gray', bg_color=-1, text_position='left',
-                 line_spacing=5, font_size=None):
+                 line_spacing=5, font_size=None, auto_line_break=False, real_fill_bg=False):
 
         self.Rect = pygame.Rect(rect)
         self.text = text
         self.text_pos = text_position
         self.font_color = to_color(text_color)
         self.bg_color = to_color(bg_color)
-        self.rendered_text = None
-        self.rendered_rect = None
+        self.line_break = auto_line_break
+        self.real_fill = real_fill_bg
 
         text = text.split('\n')
 
@@ -94,25 +143,40 @@ class Label:
         self.line_spacing = line_spacing
 
     def render(self, surface, text=None):
-        screen = pygame.Surface(self.Rect.size, pygame.SRCALPHA)
-        screen.fill(to_color(self.bg_color))
+        screen = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+        if not self.real_fill:
+            screen.fill(self.bg_color, self.Rect)
+        else:
+            bg = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+
         text = self.text.split('\n') if text is None else text.split('\n')
         step = 0
-        for i in text:
-            self.rendered_text = self.font.render(i, 1, self.font_color)
-            self.rendered_rect = self.rendered_text.get_rect(x=self.Rect.x + 2, y=self.Rect.y + 2 + step)
+        start_pos = [max(0, self.Rect.x - 2), max(0, self.Rect.y - 2)]
+        end_pos = [self.Rect.x, self.Rect.y]
 
-            if self.text_pos == 'center':
-                self.rendered_rect.centerx = self.Rect.centerx
-            elif self.text_pos == 'right':
-                self.rendered_rect.right = self.Rect.right
+        for j in text:
+            for i in (split_line(j, self.Rect.width - 4, self.font) if self.line_break else (j, )):
+                rendered_text = self.font.render(i, 1, self.font_color)
+                rendered_rect = rendered_text.get_rect(x=self.Rect.x + 2, y=self.Rect.y + 2 + step)
 
-            step += self.line_spacing + self.rendered_rect.h
-            screen.blit(self.rendered_text, self.rendered_rect)
+                if self.text_pos == 'center':
+                    rendered_rect.centerx = self.Rect.centerx
+                elif self.text_pos == 'right':
+                    rendered_rect.right = self.Rect.right - 2
 
-        surface.blit(screen,  self.Rect)
+                end_pos = rendered_rect.bottomright
+                step += self.line_spacing + rendered_rect.h
 
-class TextBox(Label):
+                screen.blit(rendered_text, rendered_rect)
+
+        if self.real_fill:
+            bg.fill(self.bg_color, (start_pos, tuple(map(lambda x: x + 2, end_pos))))
+            surface.blit(bg, (0, 0))
+
+        surface.blit(screen,  (0, 0))
+
+
+class TextBox(OldLabel):
     def __init__(self, rect, text, max_len=None, execute=(lambda self: self.set_focus()), placeholder=None,
                  bg_color='white', text_color='gray'):
         super().__init__(rect, text, text_color=text_color, bg_color=bg_color)
@@ -190,7 +254,7 @@ class TextBox(Label):
                              (self.rendered_rect.right + is_shift, self.rendered_rect.bottom - 2))
 
 
-class Button(Label):
+class Button(OldLabel):
     def __init__(self, rect, text, text_color='gray', bg_color=pygame.Color('blue'),
                  active_color=pygame.Color("lightblue"), active=True, click_event=(lambda self: self)):
         super().__init__(rect, text, text_color=text_color, bg_color=bg_color, text_position='center')

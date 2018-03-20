@@ -136,6 +136,10 @@ def get_z(long, lat, l=['sat', 'skl']):
             return i
 
 
+def get_address(coords):
+    return get_geo_object(coords[0], coords[1])["metaDataProperty"]["GeocoderMetaData"]["text"]
+
+
 def create_point(long, lat, style='pm2', color='wt', size='m', content=''):
     """
     https://tech.yandex.ru/maps/doc/staticapi/1.x/dg/concepts/markers-docpage/
