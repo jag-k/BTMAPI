@@ -73,6 +73,34 @@ class GUI:
             del self.element[self.element.index(item)]
 
 
+class OldLabel:
+    def __init__(self, rect, text, text_color='gray', bg_color=-1, text_position='left'):
+        self.Rect = pygame.Rect(rect)
+        self.text = text
+        self.text_pos = text_position
+        self.font_color = to_color(text_color)
+        self.bg_color = None if bg_color == -1 else to_color(bg_color)
+        self.font = pygame.font.Font(None, self.Rect.height - 4)
+        self.rendered_text = None
+        self.rendered_rect = None
+
+    def render(self, surface: pygame.Surface):
+        if self.bg_color is not None:
+            screen = pygame.Surface(self.Rect.size, pygame.SRCALPHA)
+            screen.fill(self.bg_color)
+            surface.blit(screen, self.Rect)
+
+        self.rendered_text = self.font.render(self.text, 1, self.font_color)
+        self.rendered_rect = self.rendered_text.get_rect(x=self.Rect.x + 2, centery=self.Rect.centery)
+
+        if self.text_pos == 'center':
+            self.rendered_rect.centerx = self.Rect.centerx
+        elif self.text_pos == 'right':
+            self.rendered_rect.right = self.Rect.right
+
+        surface.blit(self.rendered_text, self.rendered_rect)
+
+
 class Label:
     def __init__(self, rect, text, text_color='gray', bg_color=-1, text_position='left',
                  line_spacing=5, font_size=None):
@@ -95,7 +123,7 @@ class Label:
 
     def render(self, surface, text=None):
         screen = pygame.Surface(self.Rect.size, pygame.SRCALPHA)
-        screen.fill(to_color(self.bg_color))
+        screen.fill(self.bg_color)
         text = self.text.split('\n') if text is None else text.split('\n')
         step = 0
         for i in text:
@@ -111,6 +139,7 @@ class Label:
             screen.blit(self.rendered_text, self.rendered_rect)
 
         surface.blit(screen,  self.Rect)
+
 
 class TextBox(Label):
     def __init__(self, rect, text, max_len=None, execute=(lambda self: self.set_focus()), placeholder=None,
