@@ -8,7 +8,7 @@ locate = "Красная площадь, 1"
 # locate = input("Enter locate: ")
 # SPN_STEP = float(input("Enter the zoom-ratio: "))
 SPN_STEP = 0.003
-l_mode = 'схема'
+l_mode = 'гибрид'
 points = []
 L_DICT = {
     "Гибрид": ['sat', 'skl'],
@@ -50,14 +50,14 @@ spn = max_spn = search_spn(get_geo_object(coords[0], coords[1]))
 # print(max_spn)
 # вид карт
 maps = ["Схема", "Спутник", "Гибрид"]
-START_TYPE = 0
+START_TYPE = maps.index(l_mode.title())
 new_locate = False
 image = map_image(coords[0], coords[1], L_DICT[maps[START_TYPE]])
 
 pygame.init()
 clock = pygame.time.Clock()
 pygame.display.set_icon(image)
-pygame.display.set_caption(locate, locate)
+pygame.display.set_caption(get_address(coords), locate)
 screen = pygame.display.set_mode(SIZE)
 screen.blit(image, (0, 0))
 pygame.display.flip()
@@ -94,9 +94,12 @@ def delete_last_event(button):
 
 bg_color = to_color((240, 189, 0))
 active_color = to_color((255, 204, 0))
+label_bg_color = to_color("#ffffff99")
+text_color = to_color("gray50")
 
-search_textbox = TextBox((5, 5, 250, 35), locate, execute=search_textbox_event, placeholder="Поиск…",
-                         bg_color=(255, 255, 255, 150))
+search_textbox = TextBox((5, 5, 250, 35), '', execute=search_textbox_event, placeholder="Поиск…",
+                         bg_color=label_bg_color, text_color=text_color)
+
 search_button = Button((5, 50, 100, 35), 'Поиск', 'black', bg_color, active_color,
                        click_event=lambda x: search_textbox_event(search_textbox))
 
@@ -114,8 +117,18 @@ delete_last_rect.bottomleft = (5, SIZE[1]-5)
 delete_last_button = Button(delete_last_rect, "Сброс поискового результата", 'black', bg_color, active_color,
                             click_event=delete_last_event)
 
+# адрес найденного объекта
+address = get_address(coords)
+print(address)
 
-gui = GUI(search_button, type_button, search_textbox, delete_last_button)
+full_address_rect = pygame.Rect(0, 0, 250, 35)
+full_address_rect.topright = SIZE[0] - 5, 5
+
+full_address = Label(full_address_rect, address, bg_color=label_bg_color,  text_position='right',
+                     text_color=text_color,  auto_line_break=True, real_fill_bg=True)
+
+
+gui = GUI(search_button, type_button, search_textbox, delete_last_button, full_address)
 running = True
 while running:
     for event in pygame.event.get():
@@ -140,20 +153,32 @@ while running:
 
     if next_spn != spn and next_spn is not None or old_type != type_button.text or new_locate:
         spn = next_spn if next_spn is not None else spn
+
         throbber.render(screen, throbber_coords)
         pygame.display.flip()
         image = map_image(coords[0], coords[1], L_DICT[type_button.text])
+
+        throbber.render(screen, throbber_coords)
+        pygame.display.flip()
+
+        address = get_address(coords)
+        full_address.text = address
+
+        throbber.render(screen, throbber_coords)
+        pygame.display.flip()
+
         old_type = type_button.text
         new_locate = False
 
         pygame.display.set_icon(image)
-        pygame.display.set_caption(locate, locate)
+        pygame.display.set_caption(get_address(coords), locate)
 
         screen.blit(image, (0, 0))
 
     if not points:
         gui.delete(delete_last_button)
 
+    screen.blit(image, (0, 0))
     gui.update()
     gui.render(screen)
 
