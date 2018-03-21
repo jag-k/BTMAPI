@@ -136,8 +136,12 @@ def get_z(long, lat, l=['sat', 'skl']):
             return i
 
 
-def get_address(coords):
-    return get_geo_object(coords[0], coords[1])["metaDataProperty"]["GeocoderMetaData"]["text"]
+def get_address(coords, postal_code=False):
+    geo_object = get_geo_object(coords[0], coords[1])["metaDataProperty"]["GeocoderMetaData"]
+    address = geo_object["text"]
+    if postal_code and "Address" in geo_object and 'postal_code' in geo_object["Address"]:
+        address += ", " + geo_object["Address"]['postal_code']
+    return address
 
 
 def create_point(long, lat, style='pm2', color='wt', size='m', content=''):
