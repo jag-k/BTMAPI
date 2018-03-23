@@ -63,7 +63,6 @@ screen.blit(image, (0, 0))
 pygame.display.flip()
 
 throbber = GIFImage('Throbber-small.gif')
-gui = GUI()
 throbber_coords = (SIZE[0] / 2 - throbber.get_width() / 2, SIZE[1] / 2 - throbber.get_height() / 2)
 
 
@@ -81,7 +80,7 @@ def search_textbox_event(textbox):
     coords = get_coord(locate)
     points.append(create_point(*coords))
     if delete_last_button not in gui.element:
-        gui.add_element(delete_last_button)
+        gui.add_element(delete_last_button, full_address, index_button)  # Сюда добавить добавление кнопки
     new_locate = True
 
 
@@ -91,11 +90,20 @@ def delete_last_event(button):
         global new_locate
         new_locate = True
 
+def view_index(button):
+    global if_postal_code
+    if if_postal_code:
+        if_postal_code = False
+    else:
+        if_postal_code = True
+    address = get_address(coords, postal_code=if_postal_code)  
+
 
 bg_color = to_color((240, 189, 0))
 active_color = to_color((255, 204, 0))
 label_bg_color = to_color("#ffffff99")
 text_color = to_color("gray50")
+if_postal_code = False
 
 search_textbox = TextBox((5, 5, 250, 35), '', execute=search_textbox_event, placeholder="Поиск…",
                          bg_color=label_bg_color, text_color=text_color)
@@ -118,7 +126,7 @@ delete_last_button = Button(delete_last_rect, "Сброс поискового �
                             click_event=delete_last_event)
 
 # адрес найденного объекта
-address = get_address(coords)
+address = get_address(coords, postal_code=if_postal_code)
 print(address)
 
 full_address_rect = pygame.Rect(0, 0, 250, 35)
@@ -127,8 +135,13 @@ full_address_rect.topright = SIZE[0] - 5, 5
 full_address = Label(full_address_rect, address, bg_color=label_bg_color,  text_position='right',
                      text_color=text_color,  auto_line_break=True, real_fill_bg=True)
 
+#кнопка вывода индекса
+index_rect = pygame.Rect(210, 410, 100, 35)
+index_button_bg_color = to_color((200, 19, 0))
+index_button = Button(index_rect, "Индекс", "black", index_button_bg_color, click_event=view_index)
 
-gui = GUI(search_button, type_button, search_textbox, delete_last_button, full_address)
+gui = GUI(search_button, type_button, search_textbox)
+
 running = True
 while running:
     for event in pygame.event.get():
@@ -161,7 +174,8 @@ while running:
         throbber.render(screen, throbber_coords)
         pygame.display.flip()
 
-        address = get_address(coords)
+        address = get_address(coords, postal_code=if_postal_code)
+        #print(address)
         full_address.text = address
 
         throbber.render(screen, throbber_coords)
@@ -171,12 +185,16 @@ while running:
         new_locate = False
 
         pygame.display.set_icon(image)
-        pygame.display.set_caption(get_address(coords), locate)
+
+        pygame.display.set_caption(address, locate)
 
         screen.blit(image, (0, 0))
 
     if not points:
         gui.delete(delete_last_button)
+        gui.delete(full_address)
+        gui.delete(index_button)
+        # Сюда добавить удаление кнопки
 
     screen.blit(image, (0, 0))
     gui.update()
