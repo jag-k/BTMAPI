@@ -46,7 +46,8 @@ def sum_spn(spn, s1, s2=None):
 
 coords = get_coord(locate)
 # print(spn)
-spn = max_spn = search_spn(get_geo_object(coords[0], coords[1]))
+spn = search_spn(get_geo_object(coords[0], coords[1]))
+max_spn = spn[0] + 2*SPN_STEP, spn[1] + 2*SPN_STEP
 # print(max_spn)
 # вид карт
 maps = ["Схема", "Спутник", "Гибрид"]
@@ -102,7 +103,7 @@ def view_index(button):
 bg_color = to_color((240, 189, 0))
 active_color = to_color((255, 204, 0))
 label_bg_color = to_color("#ffffff99")
-text_color = to_color("gray50")
+text_color = to_color("gray20")
 if_postal_code = False
 
 search_textbox = TextBox((5, 5, 250, 35), '', execute=search_textbox_event, placeholder="Поиск…",
@@ -166,6 +167,7 @@ while running:
 
     if next_spn != spn and next_spn is not None or old_type != type_button.text or new_locate:
         spn = next_spn if next_spn is not None else spn
+
 
         throbber.render(screen, throbber_coords)
         pygame.display.flip()
