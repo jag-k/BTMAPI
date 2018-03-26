@@ -106,7 +106,7 @@ label_bg_color = to_color("#ffffff99")
 text_color = to_color("gray20")
 if_postal_code = False
 
-search_textbox = TextBox((5, 5, 250, 35), '', execute=search_textbox_event, placeholder="Поиск…",
+search_textbox = TextBox((5, 5, 330, 35), '', execute=search_textbox_event, placeholder="Поиск…",
                          bg_color=label_bg_color, text_color=text_color)
 
 search_button = Button((5, 50, 100, 35), 'Поиск', 'black', bg_color, active_color,
