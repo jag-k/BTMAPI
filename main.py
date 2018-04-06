@@ -81,7 +81,7 @@ def search_textbox_event(textbox):
     coords = get_coord(locate)
     points.append(create_point(*coords))
     if delete_last_button not in gui.element:
-        gui.add_element(delete_last_button, full_address, index_button)  # Сюда добавить добавление кнопки
+        gui.add_element(delete_last_button, full_address, index_button)
     new_locate = True
 
 
@@ -91,13 +91,12 @@ def delete_last_event(button):
         global new_locate
         new_locate = True
 
+
 def view_index(button):
     global if_postal_code
-    if if_postal_code:
-        if_postal_code = False
-    else:
-        if_postal_code = True
-    address = get_address(coords, postal_code=if_postal_code)  
+    global adderss
+    if_postal_code = not if_postal_code
+    address = get_address(coords, postal_code=if_postal_code)
 
 
 bg_color = to_color((240, 189, 0))
