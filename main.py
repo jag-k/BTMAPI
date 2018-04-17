@@ -69,6 +69,11 @@ throbber_coords = (SIZE[0] / 2 - throbber.get_width() / 2, SIZE[1] / 2 - throbbe
 
 # GUI ELEMENTS
 
+def loading():
+    throbber.render(screen, throbber_coords)
+    pygame.display.flip()
+
+
 def type_button_click(button):
     button.text = maps[(maps.index(button.text) + 1) % 3]
 
@@ -92,18 +97,34 @@ def delete_last_event(button):
         new_locate = True
 
 
-def view_index(button):
+def view_index(button: Button):
     global if_postal_code
     global adderss
-    if_postal_code = not if_postal_code
-    address = get_address(coords, postal_code=if_postal_code)
+    loading()
+    if get_postal_code(coords):
+        address = get_address(coords, postal_code=if_postal_code)
+        full_address.text = address
+        if_postal_code = not if_postal_code
+        if if_postal_code:
+            button.bg_color = button.active_color = index_button_active_color
+        else:
+            button.bg_color = button.active_color = index_button_disable_color
+    else:
+        button.active = False
+        button.pressed = True
+        button.bg_color = button.active_color = to_color("gray54")
+    loading()
 
 
 bg_color = to_color((240, 189, 0))
 active_color = to_color((255, 204, 0))
 label_bg_color = to_color("#ffffff99")
 text_color = to_color("gray20")
-if_postal_code = False
+
+# Переменная, которая сообщает, есть ли почтовый индекс у объекта по данным координатам
+have_a_postal_code = get_postal_code(coords)
+if_postal_code = bool(have_a_postal_code)
+
 
 search_textbox = TextBox((5, 5, 330, 35), '', execute=search_textbox_event, placeholder="Поиск…",
                          bg_color=label_bg_color, text_color=text_color)
@@ -135,13 +156,19 @@ full_address_rect.topright = SIZE[0] - 5, 5
 full_address = Label(full_address_rect, address, bg_color=label_bg_color,  text_position='right',
                      text_color=text_color,  auto_line_break=True, real_fill_bg=True)
 
-#кнопка вывода индекса
+
+# кнопка вывода индекса
 index_rect = pygame.Rect(210, 410, 100, 35)
-index_button_bg_color = to_color((200, 19, 0))
-index_button = Button(index_rect, "Индекс", "black", index_button_bg_color, click_event=view_index)
+
+index_button_active_color = to_color((200, 19, 0))
+index_button_disable_color = to_color((19, 200, 0))
+
+index_button_bg_color = index_button_active_color if if_postal_code else index_button_disable_color
+
+index_button = Button(index_rect, "Индекс", "black", index_button_bg_color, click_event=view_index,
+                      active=if_postal_code, active_color=index_button_bg_color)
 
 gui = GUI(search_button, type_button, search_textbox)
-
 running = True
 while running:
     for event in pygame.event.get():
@@ -167,19 +194,18 @@ while running:
     if next_spn != spn and next_spn is not None or old_type != type_button.text or new_locate:
         spn = next_spn if next_spn is not None else spn
 
-
-        throbber.render(screen, throbber_coords)
+        loading()
         pygame.display.flip()
         image = map_image(coords[0], coords[1], L_DICT[type_button.text])
 
-        throbber.render(screen, throbber_coords)
+        loading()
         pygame.display.flip()
 
         address = get_address(coords, postal_code=if_postal_code)
-        #print(address)
+        # print(address)
         full_address.text = address
 
-        throbber.render(screen, throbber_coords)
+        loading()
         pygame.display.flip()
 
         old_type = type_button.text
