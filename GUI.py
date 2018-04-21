@@ -314,30 +314,62 @@ class Button(OldLabel):
 
 
 class Checkbox:
-    def __init__(self, rect, text, text_color='white'):
-        self.Rect = pygame.Rect(rect)
+    def __init__(self, rect, text, text_color='white', box_color='blue', if_work=True,
+                 click_event=(lambda x: x)):
+        self.Rect = rect if type(rect) is pygame.Rect else pygame.Rect(rect)
         self.text = text
-        self.color = pygame.Color('blue')
-        self.font_color = pygame.Color(text_color)
+        self.color = to_color(box_color)
+        self.font_color = to_color(text_color)
         self.font = pygame.font.Font(None, self.Rect.height - 4)
         self.rendered_text = None
         self.rendered_rect = None
         self.pressed = False
+        self.work = if_work
+        self.click_event = click_event
 
-    def render(self, surface, text=None):
+    def render(self, surface, text=None, status=None):
+        if not self.work:
+            return
+        if status is None:
+            status = self.pressed
+
         r = self.Rect
         self.rendered_text = self.font.render(self.text, 1, self.font_color)
         self.rendered_rect = self.rendered_text.get_rect(x=r.x + r.width + 5, centery=r.centery)
         surface.blit(self.rendered_text, self.rendered_rect)
         pygame.draw.rect(surface, self.color, r, 1)
-        if self.pressed:
+
+        if status:
             pygame.draw.line(surface, self.color, r.topleft, r.bottomright)
             pygame.draw.line(surface, self.color, r.topright, r.bottomleft)
 
     def get_event(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN and \
-                (self.Rect.collidepoint(*event.pos) or self.rendered_rect.collidepoint(event.pos)):
-            self.pressed = not self.pressed
+        try:
+            if event.type == pygame.MOUSEBUTTONDOWN and \
+                    (self.Rect.collidepoint(*event.pos) or self.rendered_rect.collidepoint(event.pos)):
+                self.pressed = not self.pressed
+                return self.click_event(self)
+        except AttributeError:
+            return
+
+
+class Checkbox2(Checkbox):
+    def __init__(self, rect, text, space=5, text_color='white', box_color='blue', if_work=True,
+                 click_event=(lambda x: x)):
+        super().__init__(rect, text, text_color, box_color, if_work, click_event)
+        self.space = space
+
+    def render(self, surface, text=None, status=None):
+        if not self.work:
+            return
+        super().render(surface, text, False)
+        if status is None:
+            status = self.pressed
+
+        r = self.Rect
+        if status:
+            pygame.draw.rect(surface, self.color, (r.left + self.space, r.top + self.space,
+                                                   r.width - self.space * 2, r.height - self.space * 2))
 
 
 """GIFImage by Matthew Roe"""

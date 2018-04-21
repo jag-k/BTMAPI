@@ -59,7 +59,7 @@ pygame.init()
 clock = pygame.time.Clock()
 pygame.display.set_icon(image)
 pygame.display.set_caption(get_address(coords), locate)
-screen = pygame.display.set_mode(SIZE)
+screen = pygame.display.set_mode(SIZE)  # type: pygame.Surface
 screen.blit(image, (0, 0))
 pygame.display.flip()
 
@@ -86,7 +86,7 @@ def search_textbox_event(textbox):
     coords = get_coord(locate)
     points.append(create_point(*coords))
     if delete_last_button not in gui.element:
-        gui.add_element(delete_last_button, full_address, index_button)
+        gui.add_element(delete_last_button, full_address, index_checkbox)
     new_locate = True
 
 
@@ -97,22 +97,10 @@ def delete_last_event(button):
         new_locate = True
 
 
-def view_index(button: Button):
-    global if_postal_code
-    global adderss
+def event_index(cb: Checkbox2):
     loading()
-    if get_postal_code(coords):
-        address = get_address(coords, postal_code=if_postal_code)
-        full_address.text = address
-        if_postal_code = not if_postal_code
-        if if_postal_code:
-            button.bg_color = button.active_color = index_button_active_color
-        else:
-            button.bg_color = button.active_color = index_button_disable_color
-    else:
-        button.active = False
-        button.pressed = True
-        button.bg_color = button.active_color = to_color("gray54")
+    global address
+    address = full_address.text = get_address(coords, cb.pressed)
     loading()
 
 
@@ -126,7 +114,7 @@ have_a_postal_code = get_postal_code(coords)
 if_postal_code = bool(have_a_postal_code)
 
 
-search_textbox = TextBox((5, 5, 330, 35), '', execute=search_textbox_event, placeholder="Поиск…",
+search_textbox = TextBox((5, 5, 330, 35), 'Москва, Красная площадь, 1', execute=search_textbox_event, placeholder="Поиск…",
                          bg_color=label_bg_color, text_color=text_color)
 
 search_button = Button((5, 50, 100, 35), 'Поиск', 'black', bg_color, active_color,
@@ -148,7 +136,7 @@ delete_last_button = Button(delete_last_rect, "Сброс поискового �
 
 # адрес найденного объекта
 address = get_address(coords, postal_code=if_postal_code)
-print(address)
+# print(address)
 
 full_address_rect = pygame.Rect(0, 0, 250, 35)
 full_address_rect.topright = SIZE[0] - 5, 5
@@ -158,18 +146,25 @@ full_address = Label(full_address_rect, address, bg_color=label_bg_color,  text_
 
 
 # кнопка вывода индекса
-index_rect = pygame.Rect(210, 410, 100, 35)
+index_rect = pygame.Rect(0, 0, 35, 35)
+index_rect.bottomleft = delete_last_rect.right + 5, SIZE[1] - 5
 
-index_button_active_color = to_color((200, 19, 0))
-index_button_disable_color = to_color((19, 200, 0))
-
-index_button_bg_color = index_button_active_color if if_postal_code else index_button_disable_color
-
-index_button = Button(index_rect, "Индекс", "black", index_button_bg_color, click_event=view_index,
-                      active=if_postal_code, active_color=index_button_bg_color)
+index_checkbox = Checkbox2(index_rect, 'Индекс', text_color=text_color, box_color=active_color,
+                           if_work=have_a_postal_code, click_event=event_index)
 
 gui = GUI(search_button, type_button, search_textbox)
 running = True
+
+
+def screen_render():
+    screen.blit(image, (0, 0))
+
+    r = pygame.Rect((0, SIZE[1] - 45, SIZE[0], 45))
+    s = pygame.Surface(r.size, pygame.SRCALPHA)
+    s.fill(label_bg_color)
+    screen.blit(s, r)
+
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -201,6 +196,11 @@ while running:
         loading()
         pygame.display.flip()
 
+        have_a_postal_code = get_postal_code(coords)
+
+        index_checkbox.pressed = if_postal_code = if_postal_code and have_a_postal_code
+        index_checkbox.work = bool(have_a_postal_code)
+
         address = get_address(coords, postal_code=if_postal_code)
         # print(address)
         full_address.text = address
@@ -215,15 +215,15 @@ while running:
 
         pygame.display.set_caption(address, locate)
 
-        screen.blit(image, (0, 0))
+        screen_render()
 
     if not points:
         gui.delete(delete_last_button)
         gui.delete(full_address)
-        gui.delete(index_button)
+        gui.delete(index_checkbox)
         # Сюда добавить удаление кнопки
 
-    screen.blit(image, (0, 0))
+    screen_render()
     gui.update()
     gui.render(screen)
 
