@@ -43,12 +43,16 @@ def sum_spn(spn, s1, s2=None):
     spn[1] += s2
     return tuple(spn)
 
+def max_spn(country):
+    coord_country = get_coord(country)
+    spn = search_spn(get_geo_object(coord_country[0], coord_country[1]))
+    return spn
+
 
 coords = get_coord(locate)
 # print(spn)
 spn = search_spn(get_geo_object(coords[0], coords[1]))
-max_spn = spn[0] + 2*SPN_STEP, spn[1] + 2*SPN_STEP
-# print(max_spn)
+
 # вид карт
 maps = ["Схема", "Спутник", "Гибрид"]
 START_TYPE = maps.index(l_mode.title())
@@ -136,7 +140,7 @@ delete_last_button = Button(delete_last_rect, "Сброс поискового �
 
 # адрес найденного объекта
 address = get_address(coords, postal_code=if_postal_code)
-# print(address)
+max_spn = max_spn(address.split(",")[0])
 
 full_address_rect = pygame.Rect(0, 0, 250, 35)
 full_address_rect.topright = SIZE[0] - 5, 5
@@ -151,6 +155,7 @@ index_rect.bottomleft = delete_last_rect.right + 5, SIZE[1] - 5
 
 index_checkbox = Checkbox2(index_rect, 'Индекс', text_color=text_color, box_color=active_color,
                            if_work=have_a_postal_code, click_event=event_index)
+
 
 gui = GUI(search_button, type_button, search_textbox)
 running = True
