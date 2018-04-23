@@ -5,6 +5,7 @@ import pygame
 from PIL import Image
 from io import BytesIO
 from hashlib import md5 as _md
+import json
 
 
 def no_color(string):
@@ -100,9 +101,9 @@ def get_request(url, params=None, **kwargs):
         sys.exit(1)
 
 
-def get_geo_object(long, lat):
+def get_geo_object(locate):
     params = {
-        "geocode": str_param(long, lat)
+        "geocode": str_param(locate)
     }
 
     res = get_request(GEOCODE, params).json()
@@ -114,30 +115,9 @@ def str_param(*params):
     return ','.join(map(str, params))
 
 
-def get_image_hash(image):
-    return md5(image.get_view().raw)
-
-
-def get_z(long, lat, l=['sat', 'skl']):
-    params = {
-        "ll": str_param(long, lat),
-        "l": str_param(*l),
-        "spn": str_param(*search_spn([long, lat])),
-        "size": str_param(*SIZE)
-    }
-    image = convert_bytes(get_request(STATIC, params).content)
-    hash = get_image_hash(image)
-    del params['spn']
-    for i in range(18):
-        params['z'] = i
-        im = convert_bytes(get_request(STATIC, params).content)
-        h = get_image_hash(im)
-        if h == hash:
-            return i
-
-
 def get_address(coords, postal_code=False):
-    geo_object = get_geo_object(coords[0], coords[1])["metaDataProperty"]["GeocoderMetaData"]
+    geo_object = get_geo_object(coords)["metaDataProperty"]["GeocoderMetaData"]  # type: dict
+    json.dump(geo_object, open('geo.json', 'w'), ensure_ascii=False, indent=2)
     address = geo_object["text"]
     if postal_code and get_postal_code(coords):
         address += ", " + geo_object["Address"]['postal_code']
@@ -145,7 +125,7 @@ def get_address(coords, postal_code=False):
 
 
 def get_postal_code(coords):
-    geo_object = get_geo_object(coords[0], coords[1])["metaDataProperty"]["GeocoderMetaData"]  # type: dict
+    geo_object = get_geo_object(coords)["metaDataProperty"]["GeocoderMetaData"]  # type: dict
     return geo_object.get("Address", {'postal_code': None}).get('postal_code', None)
 
 

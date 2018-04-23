@@ -3,11 +3,12 @@ from multitool import *
 
 FPS = 60
 next_spn = None
-locate = "Красная площадь, 1"
-# locate = "Австралия"
+# locate = "Москва, Красная площадь, 1"
+locate = "Австралия"
 # locate = input("Enter locate: ")
 # SPN_STEP = float(input("Enter the zoom-ratio: "))
 SPN_STEP = 0.003
+MAX_SPN_COEF = 1.63
 l_mode = 'гибрид'
 points = []
 L_DICT = {
@@ -43,15 +44,19 @@ def sum_spn(spn, s1, s2=None):
     spn[1] += s2
     return tuple(spn)
 
-def max_spn(country):
-    coord_country = get_coord(country)
-    spn = search_spn(get_geo_object(coord_country[0], coord_country[1]))
-    return spn
+
+def get_max_spn(loc=None):
+    if loc is None:
+        loc = locate
+    spn = search_spn(get_geo_object(loc))
+    return spn[0] + MAX_SPN_COEF*SPN_STEP, spn[1] + MAX_SPN_COEF*SPN_STEP
 
 
 coords = get_coord(locate)
 # print(spn)
-spn = search_spn(get_geo_object(coords[0], coords[1]))
+spn = search_spn(get_geo_object(locate))
+max_spn = get_max_spn()
+# print(max_spn)
 
 # вид карт
 maps = ["Схема", "Спутник", "Гибрид"]
@@ -62,7 +67,7 @@ image = map_image(coords[0], coords[1], L_DICT[maps[START_TYPE]])
 pygame.init()
 clock = pygame.time.Clock()
 pygame.display.set_icon(image)
-pygame.display.set_caption(get_address(coords), locate)
+pygame.display.set_caption(get_address(locate), locate)
 screen = pygame.display.set_mode(SIZE)  # type: pygame.Surface
 screen.blit(image, (0, 0))
 pygame.display.flip()
@@ -86,7 +91,7 @@ def search_textbox_event(textbox):
     global locate
     global coords
     global new_locate
-    locate = textbox.text
+    locate = get_address(textbox.text)
     coords = get_coord(locate)
     points.append(create_point(*coords))
     if delete_last_button not in gui.element:
@@ -104,7 +109,7 @@ def delete_last_event(button):
 def event_index(cb: Checkbox2):
     loading()
     global address
-    address = full_address.text = get_address(coords, cb.pressed)
+    address = full_address.text = get_address(locate, cb.pressed)
     loading()
 
 
@@ -114,11 +119,11 @@ label_bg_color = to_color("#ffffff99")
 text_color = to_color("gray20")
 
 # Переменная, которая сообщает, есть ли почтовый индекс у объекта по данным координатам
-have_a_postal_code = get_postal_code(coords)
+have_a_postal_code = get_postal_code(locate)
 if_postal_code = bool(have_a_postal_code)
 
 
-search_textbox = TextBox((5, 5, 330, 35), 'Москва, Красная площадь, 1', execute=search_textbox_event, placeholder="Поиск…",
+search_textbox = TextBox((5, 5, 330, 35), locate, execute=search_textbox_event, placeholder="Поиск…",
                          bg_color=label_bg_color, text_color=text_color)
 
 search_button = Button((5, 50, 100, 35), 'Поиск', 'black', bg_color, active_color,
@@ -139,8 +144,7 @@ delete_last_button = Button(delete_last_rect, "Сброс поискового �
                             click_event=delete_last_event)
 
 # адрес найденного объекта
-address = get_address(coords, postal_code=if_postal_code)
-max_spn = max_spn(address.split(",")[0])
+address = get_address(locate, postal_code=if_postal_code)
 
 full_address_rect = pygame.Rect(0, 0, 250, 35)
 full_address_rect.topright = SIZE[0] - 5, 5
@@ -185,8 +189,10 @@ while running:
                 new_spn = sum_spn(spn, -SPN_STEP)
                 if new_spn[0] >= 0 and new_spn[1] >= 0:
                     next_spn = new_spn
+
             if pygame.key.name(event.key) in KEY_CONTROL and not search_textbox.focus:
                 coords = sum_spn(coords, *KEY_CONTROL[pygame.key.name(event.key)])
+                # locate = get_address(coords, postal_code=if_postal_code)
                 new_locate = True
 
         gui.get_event(event)
@@ -195,24 +201,25 @@ while running:
         spn = next_spn if next_spn is not None else spn
 
         loading()
-        pygame.display.flip()
-        image = map_image(coords[0], coords[1], L_DICT[type_button.text])
+        have_a_postal_code = get_postal_code(locate)
 
-        loading()
-        pygame.display.flip()
-
-        have_a_postal_code = get_postal_code(coords)
-
-        index_checkbox.pressed = if_postal_code = if_postal_code and have_a_postal_code
+        if_postal_code = if_postal_code and have_a_postal_code
+        index_checkbox.pressed = if_postal_code
         index_checkbox.work = bool(have_a_postal_code)
 
-        address = get_address(coords, postal_code=if_postal_code)
+        loading()
+        address = get_address(locate, postal_code=if_postal_code)
         # print(address)
         full_address.text = address
 
         loading()
-        pygame.display.flip()
+        max_spn = get_max_spn(locate)
+        spn = max_spn
 
+        loading()
+        image = map_image(coords[0], coords[1], L_DICT[type_button.text])
+
+        loading()
         old_type = type_button.text
         new_locate = False
 
