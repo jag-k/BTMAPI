@@ -78,14 +78,20 @@ class GUI:
         # print('\r%d' % self.active_tb, end='', flush=True)
 
     def get_event(self, event):
+        res = None
         for i in self.element:
             get_event = getattr(i, "get_event", None)
             if callable(get_event):
-                i.get_event(event)
+                ev = i.get_event(event)
+                if ev:
+                    res = True
+
         if event.type == pygame.KEYDOWN and event.key == 9 and self.textbox_list:
             self.active_tb += 1
             self.active_tb = self.active_tb % len(self.textbox_list)
             self.check = True
+            res = True
+        return res
 
     def delete(self, item):
         if item in self.element:
@@ -202,10 +208,12 @@ class TextBox(OldLabel):
         if event.type == pygame.KEYDOWN and self.focus:
             if event.key == pygame.K_ESCAPE:
                 self.focus = False
-                return None
+                return True
+
             text = self.get_text
             if event.key in (pygame.K_KP_ENTER, pygame.K_RETURN, 27):
                 self.execute(self)
+
             elif event.key == pygame.K_BACKSPACE:
                 self.text = text[0][:-1] + text[1]
 
@@ -218,10 +226,13 @@ class TextBox(OldLabel):
                     self.shift -= int(self.shift > 0)
                 else:
                     self.shift += int(self.shift < len(self.text))
+
             else:
                 text[0] += event.unicode if (event.unicode.isprintable() or event.unicode == ' ') else ''
                 if self.can_write(''.join(text)):
                     self.text = ''.join(text)
+
+            return True
 
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
             self.focus = self.Rect.collidepoint(*event.pos)
@@ -237,6 +248,7 @@ class TextBox(OldLabel):
                         break
                     t += i
                 self.shift = 0 if not in_text else self.shift
+                return True
 
     def update(self):
         if pygame.time.get_ticks() - self.blink_timer > 200:
@@ -305,12 +317,13 @@ class Button(OldLabel):
             self.pressed = self.Rect.collidepoint(*event.pos)
             if self.pressed:
                 self.click_event(self)
+                return True
         elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
             self.button_up = self.pressed
             self.pressed = False
-            return True
         if event.type == pygame.MOUSEMOTION and self.active:
             self.color = self.active_color if self.Rect.collidepoint(*event.pos) else self.bg_color
+            return True
 
 
 class Checkbox:
@@ -347,8 +360,10 @@ class Checkbox:
         try:
             if event.type == pygame.MOUSEBUTTONDOWN and \
                     (self.Rect.collidepoint(*event.pos) or self.rendered_rect.collidepoint(event.pos)):
-                self.pressed = not self.pressed
-                return self.click_event(self)
+                if self.work:
+                    self.pressed = not self.pressed
+                    self.click_event(self)
+                    return True
         except AttributeError:
             return
 
@@ -360,9 +375,9 @@ class Checkbox2(Checkbox):
         self.space = space
 
     def render(self, surface, text=None, status=None):
+        super().render(surface, text, False)
         if not self.work:
             return
-        super().render(surface, text, False)
         if status is None:
             status = self.pressed
 

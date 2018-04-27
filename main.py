@@ -1,5 +1,5 @@
 from GUI import *
-from multitool import *
+from zoom_spn import *
 
 FPS = 60
 next_spn = None
@@ -174,6 +174,7 @@ def screen_render():
     screen.blit(s, r)
 
 
+render = False
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -195,10 +196,16 @@ while running:
                 # locate = get_address(coords, postal_code=if_postal_code)
                 new_locate = True
 
-        gui.get_event(event)
+        in_gui = gui.get_event(event)
+        # print("\r%s %s" % (in_gui, event.type == pygame.MOUSEBUTTONDOWN), end='', flush=True)
+        if not in_gui and event.type == pygame.MOUSEBUTTONDOWN:
+            points.append(create_point(*screen_to_geo(event.pos, coords, spn)))
+            render = True
+            # print("click in map")
 
-    if next_spn != spn and next_spn is not None or old_type != type_button.text or new_locate:
+    if render or next_spn != spn and next_spn is not None or old_type != type_button.text or new_locate:
         spn = next_spn if next_spn is not None else spn
+        render = False
 
         loading()
         have_a_postal_code = get_postal_code(locate)
