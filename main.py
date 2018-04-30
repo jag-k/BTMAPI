@@ -230,12 +230,11 @@ while running:
         loading()
         have_a_postal_code = get_postal_code(locate)
 
-        if_postal_code = if_postal_code and have_a_postal_code
         index_checkbox.pressed = if_postal_code
         index_checkbox.work = bool(have_a_postal_code)
 
         loading()
-        address = get_address(locate, postal_code=if_postal_code)
+        address = get_address(locate, postal_code=if_postal_code and have_a_postal_code)
         # print(address)
         full_address.text = address
 

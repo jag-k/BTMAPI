@@ -341,8 +341,6 @@ class Checkbox:
         self.click_event = click_event
 
     def render(self, surface, text=None, status=None):
-        if not self.work:
-            return
         if status is None:
             status = self.pressed
 
@@ -359,11 +357,12 @@ class Checkbox:
     def get_event(self, event):
         try:
             if event.type == pygame.MOUSEBUTTONDOWN and \
-                    (self.Rect.collidepoint(*event.pos) or self.rendered_rect.collidepoint(event.pos)):
+                    (self.Rect.collidepoint(*event.pos) or self.rendered_rect.collidepoint(event.pos)) and \
+                    event.button == 1:
                 if self.work:
                     self.pressed = not self.pressed
                     self.click_event(self)
-                    return True
+                return True
         except AttributeError:
             return
 
@@ -376,8 +375,6 @@ class Checkbox2(Checkbox):
 
     def render(self, surface, text=None, status=None):
         super().render(surface, text, False)
-        if not self.work:
-            return
         if status is None:
             status = self.pressed
 
