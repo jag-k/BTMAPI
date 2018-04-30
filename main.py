@@ -1,7 +1,5 @@
-from GUI import *
 from zoom_spn import *
 
-FPS = 60
 new_zoom = None
 # locate = "Москва, Красная площадь, 1"
 locate = "Пенза, Центральная 1в"
@@ -59,7 +57,6 @@ new_locate = False
 image = map_image(coords[0], coords[1], L_DICT[maps[START_TYPE]])
 
 pygame.init()
-clock = pygame.time.Clock()
 pygame.display.set_icon(image)
 pygame.display.set_caption(get_address(locate), locate)
 screen = pygame.display.set_mode(SIZE)  # type: pygame.Surface
@@ -81,13 +78,17 @@ def type_button_click(button):
     button.text = maps[(maps.index(button.text) + 1) % 3]
 
 
-def search_textbox_event(textbox):
+def search_textbox_event(textbox, coord=None):
     global locate
     global coords
     global new_locate
-    locate = get_address(textbox.text)
-    coords = get_coord(locate)
-    create_point(*coords)
+    if coord is None:
+        locate = get_address(textbox.text)
+        coords = get_coord(locate)
+        coord = coords
+    else:
+        locate = get_address(coord)
+    create_point(*coord)
     if delete_last_button not in gui.element:
         gui.add_element(delete_last_button, full_address, index_checkbox)
     new_locate = True
@@ -195,12 +196,14 @@ while running:
 
         in_gui = gui.get_event(event)
         if not in_gui and event.type == pygame.MOUSEBUTTONDOWN and event.button not in (4, 5):
+            click = screen_to_geo(event.pos, coords, z)
             if event.button == 1:
-                click = screen_to_geo(event.pos, coords, z)
                 locate = get_address(click, if_postal_code)
-                create_point(*click)
+                search_textbox_event(search_textbox, click)
                 render = True
                 # print(click, locate)
+            elif event.button == 3:
+                screen_biz(click, screen)
 
     if render or (new_zoom != z and new_zoom is not None) or old_type != type_button.text or new_locate:
         z = new_zoom if new_zoom is not None else z

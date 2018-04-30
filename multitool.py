@@ -1,11 +1,13 @@
 from pprint import pprint
 import requests
 import sys
-import pygame
-from PIL import Image
 from io import BytesIO
 from hashlib import md5 as _md
 import json
+from GUI import *
+
+clock = pygame.time.Clock()
+FPS = 60
 
 
 def no_color(string):
@@ -43,6 +45,8 @@ SEARCH = 'search'
 API_KEY = open('api_key', 'r').read()
 SIZE = 600, 450
 SIZE_RECT = pygame.Rect((0, 0), SIZE)
+
+RADIUS = 50 / 111144
 
 
 def md5(string):
@@ -157,11 +161,70 @@ def render_points():
     return '~'.join([str(points[i]) + (str(i + 1) if i < 99 else '') for i in range(len(points))])
 
 
-if __name__ == '__main__':
+def geo_search(coord):
     params = {
-        "geocode": str_param(45.0200828, 53.12381011515711)
+        "text": str_param(*coord),
+        "ll": str_param(*coord),
+        "spn": str_param(RADIUS, RADIUS),
+        "type": "biz",
+        "rspn": 1
     }
+    return get_request(SEARCH, params).json()['features']
 
-    res = get_request(GEOCODE, params).json()
-    geo_object = res["response"]["GeoObjectCollection"]["featureMember"]
-    pprint(geo_object)
+
+def screen_biz(coord, screen: pygame.Surface):
+    res = "Организация: %s\n\n" \
+          "Сайт: %s\n" \
+          "Адресс: %s\n" \
+          "Телефон(ы): %s\n" \
+          "Почтовый Адресс: %s\n" \
+          "Категории: %s"
+
+    t = geo_search(coord)
+    if not t:
+        return
+
+    biz = t[0]  # type: dict
+    json.dump(biz, open("biz.json", "w"), indent=2, ensure_ascii=False)
+    company = biz['properties']['CompanyMetaData']  # type: dict
+    name = company['name']  # type: str
+
+    postal_code = company.get('postalCode', 'Не найден')
+    address = company.get('address', 'Адресс не найден')
+    url = company.get('url', 'Сайт не найден')
+
+    hour = company.get('Hours', {}).get("text", "")
+    name += " (%s)" % hour if hour else ''
+
+    categories = ', '.join(map(lambda x: x['name'], company.get('Categories', [])))
+    categories = categories if categories else "Без категорий"
+
+    phones = ', '.join(map(lambda x: x['formatted'], company.get('Phones', [])))
+    phones = phones if phones else "Телефоны не найдены"
+
+    res = res % (name, url, address, phones, postal_code, categories)
+
+    bg = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+    bg.fill(to_color("#FFFFFF99"))
+    screen.blit(bg, (0, 0))
+    rect = screen.get_rect()  # type: pygame.Rect
+    rect.topleft = 5, 5
+    rect.bottom -= 5
+    rect.right -= 5
+    l = Label(rect, res, "gray25", auto_line_break=True)
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                sys.exit(0)
+            if event.type == pygame.MOUSEBUTTONDOWN and event.button in (1, 3):
+                return True
+
+        l.render(screen)
+        pygame.display.flip()
+        clock.tick(FPS)
+
+
+if __name__ == '__main__':
+    res = geo_search((45.0200828, 53.12381011515711))
+    json.dump(geo_search((45.0200828, 53.12381011515711)), open('test.json', 'w'), ensure_ascii=False, indent=2)
+    json.dump(geo_search((37.764662, 55.719081)), open('test2.json', 'w'), ensure_ascii=False, indent=2)
