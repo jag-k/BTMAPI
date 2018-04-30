@@ -196,7 +196,7 @@ while running:
         in_gui = gui.get_event(event)
         # print("\r%s %s" % (in_gui, event.type == pygame.MOUSEBUTTONDOWN), end='', flush=True)
         if not in_gui and event.type == pygame.MOUSEBUTTONDOWN and event.button not in (4, 5):
-            points.append(create_point(*screen_to_geo(event.pos, coords, z)))
+            locate = get_address(screen_to_geo(event.pos, coords, z), if_postal_code)
             render = True
             # print("click in map")
 

@@ -99,8 +99,8 @@ def get_geo_object(locate):
     }
 
     res = get_request(GEOCODE, params).json()
-    geo_object = res["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
-    return geo_object
+    geo_object = res["response"]["GeoObjectCollection"]["featureMember"]
+    return geo_object[0]["GeoObject"] if len(geo_object) > 0 else {}
 
 
 def str_param(*params):
@@ -108,11 +108,14 @@ def str_param(*params):
 
 
 def get_address(coords, postal_code=False):
-    geo_object = get_geo_object(coords)["metaDataProperty"]["GeocoderMetaData"]  # type: dict
-    json.dump(geo_object, open('geo.json', 'w'), ensure_ascii=False, indent=2)
-    address = geo_object["text"]
-    if postal_code and get_postal_code(coords):
-        address += ", " + geo_object["Address"]['postal_code']
+    try:
+        geo_object = get_geo_object(coords)["metaDataProperty"]["GeocoderMetaData"]  # type: dict
+        json.dump(geo_object, open('geo.json', 'w'), ensure_ascii=False, indent=2)
+        address = geo_object["text"]
+        if postal_code and get_postal_code(coords):
+            address += ", " + geo_object["Address"]['postal_code']
+    except KeyError:
+        return "Error"
     return address
 
 
@@ -138,11 +141,12 @@ class Point:
         self.content = content
 
     def __str__(self):
-        return str_param(str_param(self.pos), ''.join((self.style, self.color, self.size, self.content)))
+        return str_param(str_param(*self.pos), ''.join(filter(lambda x: x,
+                                                              (self.style, self.color, self.size, self.content))))
 
 
 def create_point(long, lat, style='pm2', color='wt', size='m', content=''):
-    p = Point(long, lat, ''.join((style, color, size, content)))
+    p = Point(long, lat, style, color, size, content)
     if len(points) <= 100:
         points.append(p)
         return p
