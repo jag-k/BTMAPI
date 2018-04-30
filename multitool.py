@@ -42,6 +42,7 @@ STATIC = 'static'
 SEARCH = 'search'
 API_KEY = open('api_key', 'r').read()
 SIZE = 600, 450
+SIZE_RECT = pygame.Rect((0, 0), SIZE)
 
 
 def md5(string):
@@ -81,7 +82,7 @@ def get_request(url, params=None, **kwargs):
                     params['format'] = 'json'
 
             url = URLS[url]
-        res = requests.get(url, params=params, **kwargs)
+        res = requests.get(url, params=params)
         if not res:
             print(ERROR_STRING % (res.status_code, res.reason), "\n\nURL:", res.url)
             sys.exit(res.status_code)
@@ -120,9 +121,32 @@ def get_postal_code(coords):
     return geo_object.get("Address", {'postal_code': None}).get('postal_code', None)
 
 
+# POINTS #
+points = []
+
+
+class Point:
+    def __init__(self, long, lat, style='pm2', color='wt', size='m', content=''):
+        """
+        https://tech.yandex.ru/maps/doc/staticapi/1.x/dg/concepts/markers-docpage/
+        :return: point data
+        """
+        self.pos = long, lat
+        self.style = style
+        self.color = color
+        self.size = size
+        self.content = content
+
+    def __str__(self):
+        return str_param(str_param(self.pos), ''.join((self.style, self.color, self.size, self.content)))
+
+
 def create_point(long, lat, style='pm2', color='wt', size='m', content=''):
-    """
-    https://tech.yandex.ru/maps/doc/staticapi/1.x/dg/concepts/markers-docpage/
-    :return: point data
-    """
-    return str_param(long, lat, ''.join((style, color, size, content)))
+    p = Point(long, lat, ''.join((style, color, size, content)))
+    if len(points) <= 100:
+        points.append(p)
+        return p
+
+
+def render_points():
+    return '~'.join([str(points[i]) + (str(i + 1) if i < 99 else '') for i in range(len(points))])

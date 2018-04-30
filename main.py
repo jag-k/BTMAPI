@@ -2,25 +2,24 @@ from GUI import *
 from zoom_spn import *
 
 FPS = 60
-next_spn = None
+new_zoom = None
 # locate = "Москва, Красная площадь, 1"
-locate = "Австралия"
+locate = "Пенза, Центральная 1в"
+# locate = "Австралия"
 # locate = input("Enter locate: ")
-# SPN_STEP = float(input("Enter the zoom-ratio: "))
-SPN_STEP = 0.003
-MAX_SPN_COEF = 1.63
+# COORD_STEP = float(input("Enter the zoom-ratio: "))
+COORD_STEP = 0.003
 l_mode = 'гибрид'
-points = []
 L_DICT = {
     "Гибрид": ['sat', 'skl'],
     "Спутник": ['sat'],
     "Схема": ['map'],
 }
 KEY_CONTROL = {
-    "up": [0, SPN_STEP],
-    "down": [0, -SPN_STEP],
-    "right": [SPN_STEP, 0],
-    "left": [-SPN_STEP, 0],
+    "up": [0, COORD_STEP],
+    "down": [0, -COORD_STEP],
+    "right": [COORD_STEP, 0],
+    "left": [-COORD_STEP, 0],
 }
 
 
@@ -29,8 +28,8 @@ def map_image(long, lat, l=['sat', 'skl']):
         "ll": str_param(long, lat),
         "l": ','.join(l),
         "size": str_param(*SIZE),
-        "spn": str_param(*spn),
-        "pt": '~'.join([points[i] + (str(i + 1) if i < 99 else '') for i in range(len(points))])
+        "z": z,
+        "pt": render_points()
     }
 
     return convert_bytes(get_request(STATIC, params).content)
@@ -45,18 +44,13 @@ def sum_spn(spn, s1, s2=None):
     return tuple(spn)
 
 
-def get_max_spn(loc=None):
-    if loc is None:
-        loc = locate
-    spn = search_spn(get_geo_object(loc))
-    return spn[0] + MAX_SPN_COEF*SPN_STEP, spn[1] + MAX_SPN_COEF*SPN_STEP
+def get_new_zoom(c: int):
+    return c + z if c + z in range(3, 18) else z
 
 
 coords = get_coord(locate)
-# print(spn)
-spn = search_spn(get_geo_object(locate))
-max_spn = get_max_spn()
-# print(max_spn)
+z = search_z(get_geo_object(locate))
+# print(z)
 
 # вид карт
 maps = ["Схема", "Спутник", "Гибрид"]
@@ -93,7 +87,7 @@ def search_textbox_event(textbox):
     global new_locate
     locate = get_address(textbox.text)
     coords = get_coord(locate)
-    points.append(create_point(*coords))
+    create_point(*coords)
     if delete_last_button not in gui.element:
         gui.add_element(delete_last_button, full_address, index_checkbox)
     new_locate = True
@@ -180,31 +174,35 @@ while running:
         if event.type == pygame.QUIT:
             running = False
             break
-        if event.type == pygame.KEYDOWN:
+
+        if event.type == pygame.MOUSEBUTTONDOWN and not search_textbox.focus:
+            if event.button in (4, 5):
+                new_zoom = get_new_zoom((1 if event.button == 4 else -1))
+                # print("Zoom %d (%d)" % (z, (new_zoom - z)))
+
+        if event.type == pygame.KEYDOWN and not search_textbox.focus:
             if event.key == pygame.K_PAGEUP or (event.key == pygame.K_KP9 and event.mod == 4096):
-                new_spn = sum_spn(spn, SPN_STEP)
-                if new_spn[0] <= max_spn[0] and new_spn[1] <= max_spn[0]:
-                    next_spn = new_spn
+                new_zoom = get_new_zoom(-1)
+                # print("Zoom up: %d" % new_zoom)
 
             if event.key == pygame.K_PAGEDOWN or (event.key == pygame.K_KP3 and event.mod == 4096):
-                new_spn = sum_spn(spn, -SPN_STEP)
-                if new_spn[0] >= 0 and new_spn[1] >= 0:
-                    next_spn = new_spn
+                new_zoom = get_new_zoom(1)
+                # print("Zoom down: %d" % new_zoom)
 
-            if pygame.key.name(event.key) in KEY_CONTROL and not search_textbox.focus:
+            if pygame.key.name(event.key) in KEY_CONTROL:
                 coords = sum_spn(coords, *KEY_CONTROL[pygame.key.name(event.key)])
-                # locate = get_address(coords, postal_code=if_postal_code)
                 new_locate = True
 
         in_gui = gui.get_event(event)
         # print("\r%s %s" % (in_gui, event.type == pygame.MOUSEBUTTONDOWN), end='', flush=True)
-        if not in_gui and event.type == pygame.MOUSEBUTTONDOWN:
-            points.append(create_point(*screen_to_geo(event.pos, coords, spn)))
+        if not in_gui and event.type == pygame.MOUSEBUTTONDOWN and event.button not in (4, 5):
+            points.append(create_point(*screen_to_geo(event.pos, coords, z)))
             render = True
             # print("click in map")
 
-    if render or next_spn != spn and next_spn is not None or old_type != type_button.text or new_locate:
-        spn = next_spn if next_spn is not None else spn
+    if render or (new_zoom != z and new_zoom is not None) or old_type != type_button.text or new_locate:
+        z = new_zoom if new_zoom is not None else z
+        new_zoom = None
         render = False
 
         loading()
@@ -218,10 +216,6 @@ while running:
         address = get_address(locate, postal_code=if_postal_code)
         # print(address)
         full_address.text = address
-
-        loading()
-        max_spn = get_max_spn(locate)
-        spn = max_spn
 
         loading()
         image = map_image(coords[0], coords[1], L_DICT[type_button.text])
