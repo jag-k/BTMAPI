@@ -194,11 +194,13 @@ while running:
                 new_locate = True
 
         in_gui = gui.get_event(event)
-        # print("\r%s %s" % (in_gui, event.type == pygame.MOUSEBUTTONDOWN), end='', flush=True)
         if not in_gui and event.type == pygame.MOUSEBUTTONDOWN and event.button not in (4, 5):
-            locate = get_address(screen_to_geo(event.pos, coords, z), if_postal_code)
-            render = True
-            # print("click in map")
+            if event.button == 1:
+                click = screen_to_geo(event.pos, coords, z)
+                locate = get_address(click, if_postal_code)
+                create_point(*click)
+                render = True
+                # print(click, locate)
 
     if render or (new_zoom != z and new_zoom is not None) or old_type != type_button.text or new_locate:
         z = new_zoom if new_zoom is not None else z

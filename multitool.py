@@ -94,8 +94,9 @@ def get_request(url, params=None, **kwargs):
 
 
 def get_geo_object(locate):
+    locate = locate if type(locate) in [tuple, list] else [locate]
     params = {
-        "geocode": str_param(locate)
+        "geocode": str_param(*locate)
     }
 
     res = get_request(GEOCODE, params).json()
@@ -154,3 +155,13 @@ def create_point(long, lat, style='pm2', color='wt', size='m', content=''):
 
 def render_points():
     return '~'.join([str(points[i]) + (str(i + 1) if i < 99 else '') for i in range(len(points))])
+
+
+if __name__ == '__main__':
+    params = {
+        "geocode": str_param(45.0200828, 53.12381011515711)
+    }
+
+    res = get_request(GEOCODE, params).json()
+    geo_object = res["response"]["GeoObjectCollection"]["featureMember"]
+    pprint(geo_object)
