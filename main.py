@@ -230,7 +230,7 @@ while running:
         loading()
         have_a_postal_code = get_postal_code(locate)
 
-        index_checkbox.pressed = if_postal_code
+        if_postal_code = index_checkbox.pressed
         index_checkbox.work = bool(have_a_postal_code)
 
         loading()
