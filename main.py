@@ -1,6 +1,7 @@
 from zoom_spn import *
 
 new_zoom = None
+AUTO_ZOOM = True
 # locate = "Москва, Красная площадь, 1"
 #locate = "Пенза, Центральная 1в"
 locate = "Россия"
@@ -207,6 +208,7 @@ while running:
 
     if render or (new_zoom != z and new_zoom is not None) or old_type != type_button.text or new_locate:
         z = new_zoom if new_zoom is not None else z
+        edit_z = new_zoom is None
         new_zoom = None
         render = False
 
@@ -221,6 +223,10 @@ while running:
         address = get_address(locate, postal_code=if_postal_code)
         # print(address)
         full_address.text = address
+
+        if edit_z and AUTO_ZOOM:
+            z = search_z(get_geo_object(locate))
+            edit_z = False
 
         loading()
         image = map_image(coords[0], coords[1], L_DICT[type_button.text])
