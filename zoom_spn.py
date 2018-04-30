@@ -1,7 +1,7 @@
 from multitool import *
 import math
 
-SPN_VALUES = sorted([0.002, 0.005, 0.01, 0.02, 0.03, 0.1, 0.2, 0.5, 1, 2, 3, 6, 12, 24, 35])
+SPN_VALUES = sorted([0.002, 0.005, 0.01, 0.02, 0.03, 0.1, 0.2, 0.5, 1, 2, 3, 6, 12, 24, 35, 37])
 ZOOM_VALUES = dict((SPN_VALUES[i], 17 - i) for i in range(len(SPN_VALUES)))
 
 GEO_X, GEO_Y = 0.0000428, 0.0000428
@@ -9,12 +9,8 @@ GEO_X, GEO_Y = 0.0000428, 0.0000428
 
 def screen_to_geo(pos, coords, z):
     lon, lat = coords
-    const_y, const_x = 225, 300
-    dy = const_y - pos[1]
-    dx = pos[0] - const_x
-
-    return lon + dx * GEO_X * math.pow(2, 15 - z), \
-           lat + dy * GEO_Y * math.cos(math.radians(lat)) * math.pow(2, 15 - z)
+    return lon + (pos[0] - 300) * GEO_X * math.pow(2, 15 - z), \
+           lat + (225 - pos[1]) * GEO_Y * math.cos(math.radians(lat)) * math.pow(2, 15 - z)
 
 
 def get_nearby_spn(spn):

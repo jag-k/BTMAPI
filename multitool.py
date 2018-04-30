@@ -104,8 +104,11 @@ def get_geo_object(locate):
     }
 
     res = get_request(GEOCODE, params).json()
-    geo_object = res["response"]["GeoObjectCollection"]["featureMember"]
-    return geo_object[0]["GeoObject"] if len(geo_object) > 0 else {}
+    try:
+        geo_object = res["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]
+        return geo_object
+    except IndexError:
+        return get_geo_object("Украина, село Криворучка")
 
 
 def str_param(*params):
@@ -113,14 +116,11 @@ def str_param(*params):
 
 
 def get_address(coords, postal_code=False):
-    try:
-        geo_object = get_geo_object(coords)["metaDataProperty"]["GeocoderMetaData"]  # type: dict
-        json.dump(geo_object, open('geo.json', 'w'), ensure_ascii=False, indent=2)
-        address = geo_object["text"]
-        if postal_code and get_postal_code(coords):
-            address += ", " + geo_object["Address"]['postal_code']
-    except KeyError:
-        return "Error"
+    geo_object = get_geo_object(coords)["metaDataProperty"]["GeocoderMetaData"]  # type: dict
+    json.dump(geo_object, open('geo.json', 'w'), ensure_ascii=False, indent=2)
+    address = geo_object["text"]
+    if postal_code and get_postal_code(coords):
+        address += ", " + geo_object["Address"]['postal_code']
     return address
 
 
