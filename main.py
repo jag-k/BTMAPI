@@ -2,8 +2,8 @@ from zoom_spn import *
 
 new_zoom = None
 # locate = "Москва, Красная площадь, 1"
-locate = "Пенза, Центральная 1в"
-# locate = "Австралия"
+#locate = "Пенза, Центральная 1в"
+locate = "Россия"
 # locate = input("Enter locate: ")
 # COORD_STEP = float(input("Enter the zoom-ratio: "))
 COORD_STEP = 0.003
