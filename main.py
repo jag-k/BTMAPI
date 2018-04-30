@@ -1,7 +1,6 @@
 from zoom_spn import *
 
 new_zoom = None
-AUTO_ZOOM = False
 # locate = "Москва, Красная площадь, 1"
 locate = "Пенза, Центральная 1в"
 # locate = "Россия"
@@ -82,24 +81,27 @@ def type_button_click(button):
 def search_textbox_event(textbox, coord=None):
     global locate
     global coords
+    global render
     global new_locate
     if coord is None:
         locate = get_address(textbox.text)
         coords = get_coord(locate)
         coord = coords
+        gui.delete(organization_label)
+        new_locate = True
     else:
         locate = get_address(coord)
+        render = True
     create_point(*coord)
     if delete_last_button not in gui.element:
         gui.add_element(delete_last_button, full_address, index_checkbox)
-    new_locate = True
 
 
 def delete_last_event(button):
     if points:
         del points[-1]
-        global new_locate
-        new_locate = True
+        global render
+        render = True
 
 
 def event_index(cb: Checkbox2):
@@ -204,6 +206,7 @@ while running:
             if event.button == 1:
                 locate = get_address(click, if_postal_code)
                 search_textbox_event(search_textbox, click)
+                gui.delete(organization_label)
                 render = True
                 # print(click, locate)
             elif event.button == 3:
@@ -215,6 +218,8 @@ while running:
                         gui.element.insert(0, organization_label)
                     organization_label.text = org[0]['properties']['CompanyMetaData']['name']
                     create_point(*org[0]['geometry']['coordinates'])
+                else:
+                    gui.delete(organization_label)
 
     if render or (new_zoom != z and new_zoom is not None) or old_type != type_button.text or new_locate:
         z = new_zoom if new_zoom is not None else z
@@ -234,7 +239,7 @@ while running:
         # print(address)
         full_address.text = address
 
-        if edit_z and AUTO_ZOOM:
+        if edit_z and new_locate:
             z = search_z(get_geo_object(locate))
             edit_z = False
 
