@@ -1,10 +1,10 @@
 from zoom_spn import *
 
 new_zoom = None
-AUTO_ZOOM = True
+AUTO_ZOOM = False
 # locate = "Москва, Красная площадь, 1"
-#locate = "Пенза, Центральная 1в"
-locate = "Россия"
+locate = "Пенза, Центральная 1в"
+# locate = "Россия"
 # locate = input("Enter locate: ")
 # COORD_STEP = float(input("Enter the zoom-ratio: "))
 COORD_STEP = 0.003
@@ -157,6 +157,9 @@ index_checkbox = Checkbox2(index_rect, 'Индекс', text_color=text_color, bo
                            if_work=have_a_postal_code, click_event=event_index)
 
 
+organization_label = Label(pygame.Rect(5, SIZE[1] - 45 - 35, 10, 35), '', text_color, label_bg_color, real_fill_bg=True)
+
+
 gui = GUI(search_button, type_button, search_textbox)
 running = True
 
@@ -204,7 +207,14 @@ while running:
                 render = True
                 # print(click, locate)
             elif event.button == 3:
-                screen_biz(click, screen)
+                search_textbox_event(search_textbox, click)
+                org = geo_search(click)
+                search_textbox_event(search_textbox, click)
+                if org:
+                    if organization_label not in gui.element:
+                        gui.element.insert(0, organization_label)
+                    organization_label.text = org[0]['properties']['CompanyMetaData']['name']
+                    create_point(*org[0]['geometry']['coordinates'])
 
     if render or (new_zoom != z and new_zoom is not None) or old_type != type_button.text or new_locate:
         z = new_zoom if new_zoom is not None else z

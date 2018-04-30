@@ -172,56 +172,56 @@ def geo_search(coord):
     return get_request(SEARCH, params).json()['features']
 
 
-def screen_biz(coord, screen: pygame.Surface):
-    res = "Организация: %s\n\n" \
-          "Сайт: %s\n" \
-          "Адресс: %s\n" \
-          "Телефон(ы): %s\n" \
-          "Почтовый Адресс: %s\n" \
-          "Категории: %s"
-
-    t = geo_search(coord)
-    if not t:
-        return
-
-    biz = t[0]  # type: dict
-    json.dump(biz, open("biz.json", "w"), indent=2, ensure_ascii=False)
-    company = biz['properties']['CompanyMetaData']  # type: dict
-    name = company['name']  # type: str
-
-    postal_code = company.get('postalCode', 'Не найден')
-    address = company.get('address', 'Адресс не найден')
-    url = company.get('url', 'Сайт не найден')
-
-    hour = company.get('Hours', {}).get("text", "")
-    name += " (%s)" % hour if hour else ''
-
-    categories = ', '.join(map(lambda x: x['name'], company.get('Categories', [])))
-    categories = categories if categories else "Без категорий"
-
-    phones = ', '.join(map(lambda x: x['formatted'], company.get('Phones', [])))
-    phones = phones if phones else "Телефоны не найдены"
-
-    res = res % (name, url, address, phones, postal_code, categories)
-
-    bg = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
-    bg.fill(to_color("#FFFFFF99"))
-    screen.blit(bg, (0, 0))
-    rect = screen.get_rect()  # type: pygame.Rect
-    rect.topleft = 5, 5
-    rect.bottom -= 5
-    rect.right -= 5
-    l = Label(rect, res, "gray25", auto_line_break=True)
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                sys.exit(0)
-            if event.type == pygame.MOUSEBUTTONDOWN and event.button in (1, 3):
-                return True
-
-        l.render(screen)
-        pygame.display.flip()
-        clock.tick(FPS)
+# def screen_biz(coord, screen: pygame.Surface):
+#     res = "Организация: %s\n\n" \
+#           "Сайт: %s\n" \
+#           "Адресс: %s\n" \
+#           "Телефон(ы): %s\n" \
+#           "Почтовый Адресс: %s\n" \
+#           "Категории: %s"
+#
+#     t = geo_search(coord)
+#     if not t:
+#         return
+#
+#     biz = t[0]  # type: dict
+#     json.dump(biz, open("biz.json", "w"), indent=2, ensure_ascii=False)
+#     company = biz['properties']['CompanyMetaData']['name']  # type: dict
+#     name = company['name']  # type: str
+#
+#     postal_code = company.get('postalCode', 'Не найден')
+#     address = company.get('address', 'Адресс не найден')
+#     url = company.get('url', 'Сайт не найден')
+#
+#     hour = company.get('Hours', {}).get("text", "")
+#     name += " (%s)" % hour if hour else ''
+#
+#     categories = ', '.join(map(lambda x: x['name'], company.get('Categories', [])))
+#     categories = categories if categories else "Без категорий"
+#
+#     phones = ', '.join(map(lambda x: x['formatted'], company.get('Phones', [])))
+#     phones = phones if phones else "Телефоны не найдены"
+#
+#     res = res % (name, url, address, phones, postal_code, categories)
+#
+#     bg = pygame.Surface(screen.get_size(), pygame.SRCALPHA)
+#     bg.fill(to_color("#FFFFFF99"))
+#     screen.blit(bg, (0, 0))
+#     rect = screen.get_rect()  # type: pygame.Rect
+#     rect.topleft = 5, 5
+#     rect.bottom -= 5
+#     rect.right -= 5
+#     l = Label(rect, res, "gray25", auto_line_break=True)
+#     while True:
+#         for event in pygame.event.get():
+#             if event.type == pygame.QUIT:
+#                 sys.exit(0)
+#             if event.type == pygame.MOUSEBUTTONDOWN and event.button in (1, 3):
+#                 return True
+#
+#         l.render(screen)
+#         pygame.display.flip()
+#         clock.tick(FPS)
 
 
 if __name__ == '__main__':
